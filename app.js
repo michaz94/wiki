@@ -17,6 +17,24 @@ const Wikilink = Node.create({
       id: { default: null },
       label: { default: '' }
     };
+  },
+  parseHTML() {
+    return [{
+      tag: 'a[data-wikilink]',
+      getAttrs: el => ({ id: el.getAttribute('data-wikilink'), label: el.textContent })
+    }];
+  },
+  renderHTML({ node }) {
+    return ['a', mergeAttributes({
+      'data-wikilink': node.attrs.id,
+      class: 'wikilink'
+    }), node.attrs.label || 'Page'];
+  }
+});
+    return {
+      id: { default: null },
+      label: { default: '' }
+    };
   }
 });
 
