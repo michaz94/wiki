@@ -115,7 +115,7 @@ function screenHome() {
             <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
             <div class="rcard-m">${sp ? esc(sp.emoji + ' ' + sp.name) : '📥 Inbox'}</div>
           </div>`;
-        }).join('') || '<div class="empty">Rien pour l'instant. Le + jaune capture une idée.</div>'}
+        }).join('') || '<div class="empty">Rien pour le moment. Le + jaune capture une idée.</div>'}
       </div>
       <div class="sec"><span class="sec-ico">📚</span>Mes espaces</div>
       <div class="hscroll avatars">
