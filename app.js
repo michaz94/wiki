@@ -91,26 +91,43 @@ function go(name, param) { stack.push({ name, param }); render(); }
 function back() { stack.pop(); if (!stack.length) stack = [{ name: 'home' }]; render(); }
 function replaceCur(name, param) { stack.pop(); stack.push({ name, param }); render(); }
 
-/* ---------- accueil ---------- */
+/* ---------- accueil portail ---------- */
 function screenHome() {
   const count = q('SELECT COUNT(*) c FROM pages WHERE space_id IS NULL')[0].c;
   const spaces = q('SELECT * FROM spaces ORDER BY created_at');
-  const recents = q('SELECT * FROM pages ORDER BY updated_at DESC LIMIT 5');
+  const recents = q('SELECT * FROM pages ORDER BY updated_at DESC LIMIT 8');
   app.innerHTML = `
     <header class="top brand">
       <span class="logo">📖</span>
-      <h1>Notes</h1>
+      <div class="searchbar" id="search"><span>🔍</span><span>Rechercher…</span></div>
     </header>
-    <div class="hero">
-      <div class="hero-txt">
-        <div class="hero-k">TON WIKI</div>
-        <div class="hero-t">Salut Michaz 👋</div>
-        <div class="hero-s">Capture, classe, retrouve tout.</div>
-      </div>
-      <div class="hero-art">✨</div>
-    </div>
     <main>
-      <button class="btn-accent quick" id="quick">+ Note rapide</button>
+      <div class="sec"><span class="sec-ico">🕘</span>Re-plongez-vous</div>
+      <div class="hscroll">
+        ${recents.map(p => {
+          const sp = p.space_id ? getSpace(p.space_id) : null;
+          const col = sp ? sp.color : '#f5c518';
+          const ini = (p.title?.trim() || 'S')[0].toUpperCase();
+          return `<div class="rcard" data-id="${p.id}">
+            <div class="rcard-img" style="background:linear-gradient(135deg, ${col}33, ${col}0d)">
+              <span class="rcard-ini" style="color:${col}">${esc(ini)}</span>
+            </div>
+            <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
+            <div class="rcard-m">${sp ? esc(sp.emoji + ' ' + sp.name) : '📥 Inbox'}</div>
+          </div>`;
+        }).join('') || '<div class="empty">Rien pour l'instant. Le + jaune capture une idée.</div>'}
+      </div>
+      <div class="sec"><span class="sec-ico">📚</span>Mes espaces</div>
+      <div class="hscroll avatars">
+        ${spaces.map(s => `<div class="avatar" data-sid="${s.id}">
+          <div class="av-c" style="background:${s.color}">${esc(s.emoji || '📁')}</div>
+          <div class="av-n">${esc(s.name)}</div>
+        </div>`).join('')}
+        <div class="avatar" id="newSpace">
+          <div class="av-c av-add">+</div>
+          <div class="av-n">Créer</div>
+        </div>
+      </div>
       <div class="card row" id="toInbox">
         <div class="emo" style="background:#ffffff14">📥</div>
         <div class="grow"><div class="t">Inbox</div><div class="p">Idées non classées</div></div>
@@ -120,24 +137,37 @@ function screenHome() {
         <div class="emo" style="background:#ffffff14">🧩</div>
         <div class="grow"><div class="t">Templates</div><div class="p">Fiches perso, lieu, tâche…</div></div>
       </div>
-      <div class="sec"><span class="sec-ico">🗂</span>ESPACES</div>
-      ${spaces.map(s => {
-        const n = q('SELECT COUNT(*) c FROM pages WHERE space_id=?', [s.id])[0].c;
-        return `<div class="card space-card" data-sid="${s.id}" style="border-left:4px solid ${s.color}">
-          <div class="emo" style="background:${s.color}26">${esc(s.emoji || '📁')}</div>
-          <div class="grow"><div class="t">${esc(s.name)}</div><div class="meta">${n} page${n > 1 ? 's' : ''}</div></div>
-        </div>`;
-      }).join('')}
-      <button class="ghost-add" id="newSpace">+ Créer un espace</button>
-      ${recents.length ? `<div class="sec"><span class="sec-ico">🕘</span>RÉCENTES</div>` : ''}
-      ${recents.map(p => cardHTML(p)).join('')}
-    </main>`;
-  document.getElementById('quick').onclick = () => quickNote(null);
+    </main>
+    <button class="fab" id="fab">+</button>`;
+  document.getElementById('search').onclick = () => go('search');
   document.getElementById('toInbox').onclick = () => go('inbox');
   document.getElementById('toTpl').onclick = () => go('templates');
   document.getElementById('newSpace').onclick = () => go('newspace');
+  document.getElementById('fab').onclick = () => quickNote(null);
   app.querySelectorAll('[data-sid]').forEach(c => c.onclick = () => go('space', c.dataset.sid));
-  wireCards();
+  app.querySelectorAll('.rcard').forEach(c => c.onclick = () => go('read', c.dataset.id));
+}
+
+/* ---------- recherche ---------- */
+function screenSearch() {
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <input class="search-input" id="sq" placeholder="Rechercher dans le wiki…">
+    </header>
+    <main id="sres"><div class="empty">Tape un mot : titres et textes sont fouillés.</div></main>`;
+  document.getElementById('bk').onclick = back;
+  const input = document.getElementById('sq');
+  const res = document.getElementById('sres');
+  input.oninput = () => {
+    const f = input.value.trim();
+    if (!f) { res.innerHTML = '<div class="empty">Tape un mot : titres et textes sont fouillés.</div>'; return; }
+    const like = '%' + f + '%';
+    const rows = q('SELECT * FROM pages WHERE title LIKE ? OR body LIKE ? ORDER BY updated_at DESC LIMIT 30', [like, like]);
+    res.innerHTML = rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucun résultat pour « ${esc(f)} ».</div>`;
+    wireCards();
+  };
+  setTimeout(() => input.focus(), 60);
 }
 
 /* ---------- templates ---------- */
@@ -249,40 +279,51 @@ function screenSpace(id) {
       <div class="title">${esc(s.emoji || '')} ${esc(s.name)}</div>
     </header>
     <main>
-      <button class="btn-accent quick" id="add" style="background:${s.color}">+ Note ici</button>
-      ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucune page dans cet espace.</div>`}
-    </main>`;
+      ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucune page dans cet espace.<br>Le + jaune en crée une ici.</div>`}
+    </main>
+    <button class="fab" id="fab" style="background:${s.color}">+</button>`;
   document.getElementById('bk').onclick = back;
-  document.getElementById('add').onclick = () => quickNote(id);
+  document.getElementById('fab').onclick = () => quickNote(id);
   wireCards();
 }
 
-/* ---------- nouvel espace ---------- */
+/* ---------- nouvel espace (aperçu live) ---------- */
 function screenNewSpace() {
+  let color = COLORS[0];
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
-      <h1>Nouvel espace</h1>
+      <h1>Nouveau monde</h1>
     </header>
     <main>
-      <div class="lab">Emoji</div>
-      <input class="field" id="emo" maxlength="4" placeholder="📕" value="📕">
-      <div class="lab">Nom</div>
-      <input class="field" id="nm" placeholder="Roman, projet…">
-      <div class="lab">Couleur</div>
+      <div class="ns-preview">
+        <div class="av-c av-big" id="pv" style="background:${color}">📕</div>
+        <div class="ns-pv-name" id="pvn">Ton espace</div>
+      </div>
+      <div class="lab">EMOJI</div>
+      <input class="field" id="emo" maxlength="4" value="📕">
+      <div class="lab">NOM</div>
+      <input class="field" id="nm" placeholder="Roman, projet, univers…">
+      <div class="lab">COULEUR</div>
       <div class="swatches" id="sw">${COLORS.map((c, i) => `<div class="sw${i === 0 ? ' sel' : ''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
-      <button class="btn-accent quick" id="go">Créer</button>
+      <button class="btn-accent quick" id="go">Créer ce monde</button>
     </main>`;
-  let color = COLORS[0];
+  const pv = document.getElementById('pv');
+  const pvn = document.getElementById('pvn');
+  const emo = document.getElementById('emo');
+  const nm = document.getElementById('nm');
+  const upd = () => { pv.style.background = color; pv.textContent = emo.value.trim() || '📁'; pvn.textContent = nm.value.trim() || 'Ton espace'; };
+  emo.oninput = upd; nm.oninput = upd;
   document.getElementById('bk').onclick = back;
   document.getElementById('sw').querySelectorAll('.sw').forEach(el => el.onclick = () => {
     color = el.dataset.c;
     document.querySelectorAll('#sw .sw').forEach(x => x.classList.toggle('sel', x === el));
+    upd();
   });
   document.getElementById('go').onclick = async () => {
-    const name = document.getElementById('nm').value.trim();
+    const name = nm.value.trim();
     if (!name) return;
-    const emoji = document.getElementById('emo').value.trim() || '📁';
+    const emoji = emo.value.trim() || '📁';
     const id = uid();
     run('INSERT INTO spaces (id,name,emoji,color,created_at) VALUES (?,?,?,?,?)', [id, name, emoji, color, Date.now()]);
     await saveDB();
@@ -328,13 +369,13 @@ function screenInbox() {
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <h1>Inbox</h1>
-      <button class="icon-btn" id="plus">+</button>
     </header>
     <main>
       ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Rien dans l'Inbox.<br>Tout ce que tu captures arrive ici.</div>`}
-    </main>`;
+    </main>
+    <button class="fab" id="fab">+</button>`;
   document.getElementById('bk').onclick = back;
-  document.getElementById('plus').onclick = () => quickNote(null);
+  document.getElementById('fab').onclick = () => quickNote(null);
   wireCards();
 }
 
@@ -575,6 +616,7 @@ function render() {
   else if (cur.name === 'templates') screenTemplates();
   else if (cur.name === 'newtemplate') screenNewTemplate();
   else if (cur.name === 'template') screenTemplate(cur.param);
+  else if (cur.name === 'search') screenSearch();
   window.scrollTo(0, 0);
 }
 
