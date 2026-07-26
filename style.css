@@ -245,3 +245,71 @@ textarea.field{resize:vertical;min-height:70px}
 .tb:active{background:var(--surface2)}
 .tb.on{color:var(--accent);background:rgba(255,206,0,.12)}
 .tb-sep{flex:0 0 1px;background:var(--line);margin:6px 6px}
+
+/* ============ MENU HAMBURGER ============ */
+.menu-btn{display:flex;flex-direction:column;justify-content:center;
+  gap:4px;padding:8px 6px;width:34px;height:34px;background:none;border:none;cursor:pointer}
+.menu-btn span{display:block;width:20px;height:2px;background:var(--accent);border-radius:2px}
+
+/* ============ DRAWER ============ */
+.drawer-overlay{position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0);transition:background .25s ease}
+.drawer-overlay.open{background:rgba(0,0,0,.55)}
+.drawer{position:absolute;left:0;top:0;bottom:0;
+  width:min(88vw, 360px);background:var(--bg);
+  border-right:1px solid var(--line);transform:translateX(-100%);
+  transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;padding:12px 0 16px;overflow-y:auto;
+  padding-top:calc(12px + env(safe-area-inset-top))}
+.drawer-overlay.open .drawer{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:8px 20px 18px}
+.drawer-head .logo{font-size:26px;font-weight:900;letter-spacing:-.5px;color:var(--text)}
+.drawer-head .icon-btn{color:var(--text);font-size:22px}
+.drawer-nav{display:flex;flex-direction:column;padding:0 6px}
+.dr-item{display:flex;align-items:center;gap:18px;background:none;border:none;
+  color:var(--text);padding:16px 18px;font-size:17px;font-weight:600;
+  cursor:pointer;text-align:left;border-radius:10px;font-family:inherit}
+.dr-item:active{background:var(--surface)}
+.dr-item.small{font-size:15px;padding:14px 22px}
+.dr-ico{width:28px;height:28px;display:inline-flex;align-items:center;
+  justify-content:center;font-size:16px;color:var(--text);
+  border:1.5px solid var(--text);border-radius:50%;flex:0 0 28px}
+.dr-item.small .dr-ico{display:none}
+.drawer-sep{height:1px;background:var(--line);margin:14px 22px}
+
+/* ============ THÈME CLAIR ============ */
+:root[data-theme="light"]{
+  --bg:#ffffff;--surface:#f4f4f4;--surface2:#e8e8e8;
+  --text:#0a0a0a;--muted:#666;--line:#e0e0e0
+}
+:root[data-theme="light"] .menu-btn span{background:#0a0a0a}
+:root[data-theme="light"] .rcard-img{background:#e0e0e0 !important}
+:root[data-theme="light"] .rcard-img::before{background:#b0b0b0}
+
+/* ============ CARTES "Re-plongez-vous" style Fandom ============ */
+.rcard{flex:0 0 280px;background:transparent;border:none;padding:0}
+.rcard-img{
+  aspect-ratio:1/1;width:100%;height:auto;
+  border-radius:14px;margin-bottom:12px;
+  position:relative;overflow:hidden;
+  background:#2b2b2b !important;
+  display:flex;align-items:center;justify-content:center
+}
+.rcard-img::before{
+  content:"";position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);width:44%;height:44%;
+  background:#4a4a4a;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'><path d='M50 5 C 30 30, 15 50, 20 80 C 25 105, 45 115, 50 115 C 55 115, 75 105, 80 80 C 85 50, 70 30, 50 5 Z M50 55 L58 68 L50 80 L42 68 Z'/></svg>") center/contain no-repeat;
+          mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'><path d='M50 5 C 30 30, 15 50, 20 80 C 25 105, 45 115, 50 115 C 55 115, 75 105, 80 80 C 85 50, 70 30, 50 5 Z M50 55 L58 68 L50 80 L42 68 Z'/></svg>") center/contain no-repeat
+}
+.rcard-img::after{
+  content:"📝";position:absolute;left:10px;bottom:10px;
+  width:32px;height:32px;background:rgba(0,0,0,.75);
+  border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;z-index:2
+}
+.rcard-ini{display:none}
+.rcard-t{font-weight:800;font-size:18px;color:var(--text);margin-bottom:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard-m{color:var(--muted);font-size:13px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
