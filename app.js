@@ -98,7 +98,8 @@ function screenHome() {
   const recents = q('SELECT * FROM pages ORDER BY updated_at DESC LIMIT 8');
   app.innerHTML = `
     <header class="top brand">
-      <span class="logo">📖</span>
+      <button class="menu-btn" id="openMenu"><span></span><span></span><span></span></button>
+      <span class="logo">Fandom</span>
       <div class="searchbar" id="search"><span>🔍</span><span>Rechercher…</span></div>
     </header>
     <main>
@@ -139,6 +140,7 @@ function screenHome() {
       </div>
     </main>
     <button class="fab" id="fab">+</button>`;
+  document.getElementById('openMenu').onclick = openDrawer;
   document.getElementById('search').onclick = () => go('search');
   document.getElementById('toInbox').onclick = () => go('inbox');
   document.getElementById('toTpl').onclick = () => go('templates');
@@ -601,6 +603,62 @@ async function quickNote(spaceId) {
   go('edit', id);
 }
 
+/* ---------- thème ---------- */
+function loadTheme() {
+  const t = localStorage.getItem('theme') || 'dark';
+  document.documentElement.dataset.theme = t;
+}
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('theme', next);
+}
+
+/* ---------- drawer (menu latéral) ---------- */
+function openDrawer() {
+  const isLight = (document.documentElement.dataset.theme || 'dark') === 'light';
+  const dr = document.createElement('div');
+  dr.className = 'drawer-overlay';
+  dr.innerHTML = `
+    <aside class="drawer" onclick="event.stopPropagation()">
+      <div class="drawer-head">
+        <span class="logo">Fandom</span>
+        <button class="icon-btn" id="drClose">✕</button>
+      </div>
+      <nav class="drawer-nav">
+        <button class="dr-item" data-act="home"><span class="dr-ico">⌂</span>Accueil</button>
+        <button class="dr-item" data-act="saved"><span class="dr-ico">✚</span>Enregistré</button>
+        <button class="dr-item" data-act="progress"><span class="dr-ico">✓</span>Suivi de la progression</button>
+        <button class="dr-item" data-act="history"><span class="dr-ico">⏱</span>Historique</button>
+        <button class="dr-item" data-act="tools"><span class="dr-ico">▦</span>Utilitaires</button>
+      </nav>
+      <div class="drawer-sep"></div>
+      <nav class="drawer-nav">
+        <button class="dr-item small">Parcourir les wikis</button>
+        <button class="dr-item small">Centre des communautés</button>
+      </nav>
+      <div class="drawer-sep"></div>
+      <button class="dr-item" id="drTheme">
+        <span class="dr-ico">${isLight ? '☾' : '☀'}</span>
+        Passer au thème ${isLight ? 'sombre' : 'clair'}
+      </button>
+    </aside>`;
+  document.body.appendChild(dr);
+  requestAnimationFrame(() => dr.classList.add('open'));
+  const close = () => { dr.classList.remove('open'); setTimeout(() => dr.remove(), 260); };
+  dr.onclick = close;
+  dr.querySelector('#drClose').onclick = close;
+  dr.querySelector('#drTheme').onclick = e => { e.stopPropagation(); toggleTheme(); close(); };
+  dr.querySelectorAll('.dr-item[data-act]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const a = b.dataset.act;
+    close();
+    if (a === 'home') { stack = [{ name: 'home' }]; render(); }
+    else if (a === 'history') go('inbox');
+  });
+}
+
 /* ---------- rendu ---------- */
 function render() {
   if (pickerListener) { window.removeEventListener('open-wikilink-picker', pickerListener); pickerListener = null; }
@@ -622,6 +680,7 @@ function render() {
 
 /* ---------- démarrage ---------- */
 app.innerHTML = '<div class="empty">Chargement…</div>';
+loadTheme();
 try {
   await initDB();
   render();
