@@ -1,10 +1,45 @@
-import { Editor } from 'https://esm.sh/@tiptap/core@2.11.5';
+import { Editor, Node, InputRule, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
 
-let db, editor = null;
+let db, editor = null, pickerListener = null;
 let stack = [{ name: 'home' }];
 const app = document.getElementById('app');
 const COLORS = ['#f5c518','#ff6b6b','#4ecdc4','#a78bfa','#6bcb77','#ff9f43','#54a0ff','#f368e0'];
+
+/* ---------- nœud wikilink ---------- */
+const Wikilink = Node.create({
+  name: 'wikilink',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  addAttributes() {
+    return {
+      id: { default: null },
+      label: { default: '' }
+    };
+  },
+  parseHTML() {
+    return [{
+      tag: 'a[data-wikilink]',
+      getAttrs: el => ({ id: el.getAttribute('data-wikilink'), label: el.textContent })
+    }];
+  },
+  renderHTML({ node }) {
+    return ['a', mergeAttributes({
+      'data-wikilink': node.attrs.id,
+      class: 'wikilink'
+    }), node.attrs.label || 'Page'];
+  },
+  addInputRules() {
+    return [new InputRule({
+      match: /\[\[$/,
+      handler: ({ editor: ed, range }) => {
+        ed.chain().focus().deleteRange({ from: range.from, to: range.to }).run();
+        window.dispatchEvent(new CustomEvent('open-wikilink-picker'));
+      }
+    })];
+  }
+});
 
 /* ---------- base de données ---------- */
 async function initDB() {
@@ -215,6 +250,8 @@ function screenRead(id) {
   const chip = s
     ? `<span style="color:${s.color}">${esc(s.emoji || '')}</span> ${esc(s.name)}`
     : `📥 Inbox`;
+  const bl = q('SELECT id,title,body,created_at,updated_at,is_inbox,space_id FROM pages WHERE id<>? AND body LIKE ?',
+    [id, '%data-wikilink="' + id + '"%']);
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -225,10 +262,19 @@ function screenRead(id) {
       <button class="chip" id="chip">${chip}</button>
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
+      ${bl.length ? `<div class="sec">LIENS ENTRANTS</div>${bl.map(x => cardHTML(x)).join('')}` : ''}
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
   document.getElementById('chip').onclick = () => go('classer', id);
+  app.querySelector('.body').querySelectorAll('a[data-wikilink]').forEach(a => {
+    const pid = a.getAttribute('data-wikilink');
+    const t = getPage(pid);
+    a.textContent = t ? (t.title?.trim() || 'Sans titre') : 'Page supprimée';
+    a.classList.toggle('dead', !t);
+    a.onclick = e => { e.preventDefault(); if (t) go('read', pid); };
+  });
+  wireCards();
 }
 
 /* ---------- édition ---------- */
@@ -257,11 +303,66 @@ function screenEdit(id) {
   editor = new Editor({
     element: document.getElementById('ed'),
     content: p.body || '',
-    extensions: [StarterKit.configure({ heading: { levels: [2, 3, 4] } })],
+    extensions: [
+      StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
+      Wikilink
+    ],
     onUpdate: () => updateTb()
   });
+  pickerListener = () => openPicker(insertWikilink);
+  window.addEventListener('open-wikilink-picker', pickerListener);
   buildToolbar();
   updateTb();
+}
+
+/* ---------- picker wikilink ---------- */
+function openPicker(onPick) {
+  const pages = q('SELECT id,title,space_id FROM pages ORDER BY updated_at DESC');
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="ov-box">
+      <input class="field" id="pkq" placeholder="Chercher une page…">
+      <div class="ov-list" id="pkl"></div>
+    </div>`;
+  document.body.appendChild(ov);
+  const input = ov.querySelector('#pkq');
+  const list = ov.querySelector('#pkl');
+  const close = () => ov.remove();
+  function draw(filter = '') {
+    const f = filter.toLowerCase();
+    const rows = pages.filter(x => (x.title || '').toLowerCase().includes(f)).slice(0, 50);
+    list.innerHTML = rows.map(x => {
+      const sp = x.space_id ? getSpace(x.space_id) : null;
+      return `<div class="card row pk" data-id="${x.id}">
+        ${sp ? `<div class="emo" style="background:${sp.color}26">${esc(sp.emoji || '')}</div>` : ''}
+        <div class="grow"><div class="t">${esc(x.title || 'Sans titre')}</div></div>
+      </div>`;
+    }).join('') + (filter
+      ? `<div class="card row pk-new"><div class="grow"><div class="t" style="color:var(--accent)">+ Créer « ${esc(filter)} »</div></div></div>`
+      : '');
+    list.querySelectorAll('.pk').forEach(el =>
+      el.onclick = () => { close(); onPick({ id: el.dataset.id }); });
+    const nw = list.querySelector('.pk-new');
+    if (nw) nw.onclick = () => { close(); onPick({ create: filter }); };
+  }
+  input.oninput = () => draw(input.value.trim());
+  ov.onclick = e => { if (e.target === ov) close(); };
+  draw();
+  setTimeout(() => input.focus(), 60);
+}
+function insertWikilink(pick) {
+  if (!editor) return;
+  if (pick.create) {
+    const id = uid(), now = Date.now();
+    run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id) VALUES (?,?,?,?,?,?,?)',
+      [id, pick.create, '', now, now, 1, null]);
+    saveDB();
+    editor.chain().focus().insertContent({ type: 'wikilink', attrs: { id, label: pick.create } }).run();
+  } else {
+    const t = getPage(pick.id);
+    editor.chain().focus().insertContent({ type: 'wikilink', attrs: { id: pick.id, label: t?.title || 'Sans titre' } }).run();
+  }
 }
 
 /* ---------- toolbar ---------- */
@@ -282,7 +383,9 @@ const CMDS = [
   ['ol', '1.', e => e.chain().focus().toggleOrderedList().run(), e => e.isActive('orderedList')],
   ['sep'],
   ['bq', '❝', e => e.chain().focus().toggleBlockquote().run(), e => e.isActive('blockquote')],
-  ['hr', '—', e => e.chain().focus().setHorizontalRule().run(), e => false]
+  ['hr', '—', e => e.chain().focus().setHorizontalRule().run(), e => false],
+  ['sep'],
+  ['wl', '🔗', () => window.dispatchEvent(new CustomEvent('open-wikilink-picker')), e => false]
 ];
 function buildToolbar() {
   const tb = document.getElementById('tb');
@@ -316,6 +419,7 @@ async function quickNote(spaceId) {
 
 /* ---------- rendu ---------- */
 function render() {
+  if (pickerListener) { window.removeEventListener('open-wikilink-picker', pickerListener); pickerListener = null; }
   if (editor && stack[stack.length - 1].name !== 'edit') { editor.destroy(); editor = null; }
   const cur = stack[stack.length - 1];
   if (cur.name === 'home') screenHome();
