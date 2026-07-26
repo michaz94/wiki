@@ -50,8 +50,12 @@ async function initDB() {
     created_at INTEGER, updated_at INTEGER, is_inbox INTEGER DEFAULT 1, space_id TEXT)`);
   db.run(`CREATE TABLE IF NOT EXISTS spaces (
     id TEXT PRIMARY KEY, name TEXT, emoji TEXT, color TEXT, created_at INTEGER)`);
+  db.run(`CREATE TABLE IF NOT EXISTS templates (
+    id TEXT PRIMARY KEY, name TEXT, emoji TEXT, fields TEXT, created_at INTEGER)`);
   const cols = q('PRAGMA table_info(pages)').map(c => c.name);
   if (!cols.includes('space_id')) db.run('ALTER TABLE pages ADD COLUMN space_id TEXT');
+  if (!cols.includes('template_id')) db.run('ALTER TABLE pages ADD COLUMN template_id TEXT');
+  if (!cols.includes('infobox')) db.run('ALTER TABLE pages ADD COLUMN infobox TEXT');
   try { await navigator.storage.persist(); } catch (e) {}
   await saveDB();
 }
@@ -74,6 +78,7 @@ function q(sql, params = []) {
 function run(sql, params = []) { db.run(sql, params); }
 function getPage(id) { return q('SELECT * FROM pages WHERE id=?', [id])[0]; }
 function getSpace(id) { return q('SELECT * FROM spaces WHERE id=?', [id])[0]; }
+function getTemplate(id) { return q('SELECT * FROM templates WHERE id=?', [id])[0]; }
 
 /* ---------- utilitaires ---------- */
 const esc = s => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -99,6 +104,10 @@ function screenHome() {
         <div class="grow"><div class="t">📥 Inbox</div><div class="p">Idées non classées</div></div>
         ${count ? `<span class="badge">${count}</span>` : ''}
       </div>
+      <div class="card row" id="toTpl">
+        <div class="emo" style="background:#ffffff14">🧩</div>
+        <div class="grow"><div class="t">Templates</div><div class="p">Fiches perso, lieu, tâche…</div></div>
+      </div>
       <div class="sec">ESPACES</div>
       ${spaces.map(s => {
         const n = q('SELECT COUNT(*) c FROM pages WHERE space_id=?', [s.id])[0].c;
@@ -113,8 +122,107 @@ function screenHome() {
     </main>`;
   document.getElementById('quick').onclick = () => quickNote(null);
   document.getElementById('toInbox').onclick = () => go('inbox');
+  document.getElementById('toTpl').onclick = () => go('templates');
   document.getElementById('newSpace').onclick = () => go('newspace');
   app.querySelectorAll('[data-sid]').forEach(c => c.onclick = () => go('space', c.dataset.sid));
+  wireCards();
+}
+
+/* ---------- templates ---------- */
+function screenTemplates() {
+  const rows = q('SELECT * FROM templates ORDER BY created_at');
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <h1>Templates</h1>
+      <button class="icon-btn" id="plus">+</button>
+    </header>
+    <main>
+      ${rows.map(t => {
+        const n = q('SELECT COUNT(*) c FROM pages WHERE template_id=?', [t.id])[0].c;
+        return `<div class="card row" data-tid="${t.id}">
+          <div class="emo" style="background:#ffffff14">${esc(t.emoji || '🧩')}</div>
+          <div class="grow"><div class="t">${esc(t.name)}</div><div class="meta">${n} page${n > 1 ? 's' : ''}</div></div>
+        </div>`;
+      }).join('') || `<div class="empty">Aucun template.<br>Crée des fiches : personnage, lieu, tâche…</div>`}
+    </main>`;
+  document.getElementById('bk').onclick = back;
+  document.getElementById('plus').onclick = () => go('newtemplate');
+  app.querySelectorAll('[data-tid]').forEach(c => c.onclick = () => go('template', c.dataset.tid));
+}
+
+function screenNewTemplate() {
+  let fields = [];
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <h1>Nouveau template</h1>
+    </header>
+    <main>
+      <div class="lab">Emoji</div>
+      <input class="field" id="emo" maxlength="4" value="🧩">
+      <div class="lab">Nom</div>
+      <input class="field" id="nm" placeholder="Personnage, Lieu, Tâche…">
+      <div class="lab">CHAMPS</div>
+      <div id="flist"></div>
+      <button class="ghost-add" id="addf">+ Ajouter un champ</button>
+      <button class="btn-accent quick" id="createTpl">Créer le template</button>
+    </main>`;
+  const flist = document.getElementById('flist');
+  function drawFields() {
+    flist.innerHTML = fields.map((f, i) => `
+      <div class="field-row">
+        <input class="field" data-i="${i}" data-k="label" placeholder="Nom du champ" value="${esc(f.label)}">
+        <select class="mini-select" data-i="${i}" data-k="type">
+          <option value="text"${f.type === 'long' ? '' : ' selected'}>Texte</option>
+          <option value="long"${f.type === 'long' ? ' selected' : ''}>Long</option>
+        </select>
+        <button class="icon-btn" data-rm="${i}">✕</button>
+      </div>`).join('') || `<div class="empty" style="margin-top:6px">Aucun champ pour le moment.</div>`;
+    flist.querySelectorAll('input[data-k]').forEach(el => el.oninput = () => { fields[+el.dataset.i].label = el.value; });
+    flist.querySelectorAll('select').forEach(el => el.onchange = () => { fields[+el.dataset.i].type = el.value; });
+    flist.querySelectorAll('[data-rm]').forEach(el => el.onclick = () => { fields.splice(+el.dataset.rm, 1); drawFields(); });
+  }
+  drawFields();
+  document.getElementById('bk').onclick = back;
+  document.getElementById('addf').onclick = () => { fields.push({ label: '', type: 'text' }); drawFields(); };
+  document.getElementById('createTpl').onclick = async () => {
+    const name = document.getElementById('nm').value.trim();
+    if (!name) return;
+    const clean = fields.map((f, i) => ({ key: 'f' + i, label: f.label.trim() || ('Champ ' + (i + 1)), type: f.type }));
+    const id = uid();
+    run('INSERT INTO templates (id,name,emoji,fields,created_at) VALUES (?,?,?,?,?)',
+      [id, name, document.getElementById('emo').value.trim() || '🧩', JSON.stringify(clean), Date.now()]);
+    await saveDB();
+    replaceCur('template', id);
+  };
+}
+
+function screenTemplate(id) {
+  const t = getTemplate(id);
+  if (!t) { back(); return; }
+  const fields = JSON.parse(t.fields || '[]');
+  const pages = q('SELECT * FROM pages WHERE template_id=? ORDER BY updated_at DESC', [id]);
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <div class="title">${esc(t.emoji || '')} ${esc(t.name)}</div>
+    </header>
+    <main>
+      <button class="btn-accent quick" id="np">+ Nouvelle page</button>
+      <div class="sec">CHAMPS</div>
+      ${fields.map(f => `<div class="card row"><div class="grow"><div class="t">${esc(f.label)}</div><div class="meta">${f.type === 'long' ? 'Texte long' : 'Texte'}</div></div></div>`).join('') || '<div class="empty">Aucun champ.</div>'}
+      <div class="sec">PAGES</div>
+      ${pages.map(p => cardHTML(p)).join('') || '<div class="empty">Aucune page avec ce template.</div>'}
+    </main>`;
+  document.getElementById('bk').onclick = back;
+  document.getElementById('np').onclick = async () => {
+    const pid = uid(), now = Date.now();
+    run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox) VALUES (?,?,?,?,?,?,?,?,?)',
+      [pid, '', '', now, now, 1, null, id, '{}']);
+    await saveDB();
+    go('edit', pid);
+  };
   wireCards();
 }
 
@@ -241,23 +349,29 @@ function screenRead(id) {
   const chip = s
     ? `<span style="color:${s.color}">${esc(s.emoji || '')}</span> ${esc(s.name)}`
     : `📥 Inbox`;
+  const tpl = p.template_id ? getTemplate(p.template_id) : null;
+  let info = {}; try { info = JSON.parse(p.infobox || '{}'); } catch (e) {}
+  const ibRows = tpl ? JSON.parse(tpl.fields || '[]').filter(f => (info[f.key] || '').trim()) : [];
   const bl = q('SELECT id,title,body,created_at,updated_at,is_inbox,space_id FROM pages WHERE id<>? AND body LIKE ?',
     [id, '%data-wikilink="' + id + '"%']);
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <div class="title">${esc(p.title?.trim() || 'Sans titre')}</div>
+      <button class="icon-btn" id="dup">⧉</button>
       <button class="btn-ghost" id="ed">Modifier</button>
     </header>
     <article class="read">
       <button class="chip" id="chip">${chip}</button>
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
+      ${ibRows.length ? `<div class="infobox"><div class="ib-head">${esc(tpl.emoji || '')} ${esc(tpl.name)}</div>${ibRows.map(f => `<div class="ib-row"><div class="ib-k">${esc(f.label)}</div><div class="ib-v">${esc(info[f.key])}</div></div>`).join('')}</div>` : ''}
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
       ${bl.length ? `<div class="sec">LIENS ENTRANTS</div>${bl.map(x => cardHTML(x)).join('')}` : ''}
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
   document.getElementById('chip').onclick = () => go('classer', id);
+  document.getElementById('dup').onclick = () => duplicatePage(id);
   app.querySelector('.body').querySelectorAll('a[data-wikilink]').forEach(a => {
     const pid = a.getAttribute('data-wikilink');
     const t = getPage(pid);
@@ -272,6 +386,9 @@ function screenRead(id) {
 function screenEdit(id) {
   const p = getPage(id);
   if (!p) { back(); return; }
+  const tpl = p.template_id ? getTemplate(p.template_id) : null;
+  const fields = tpl ? JSON.parse(tpl.fields || '[]') : [];
+  let info = {}; try { info = JSON.parse(p.infobox || '{}'); } catch (e) {}
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -279,14 +396,26 @@ function screenEdit(id) {
       <button class="btn-accent" id="save">Enregistrer</button>
     </header>
     <input class="title-input" id="ttl" placeholder="Titre" value="${esc(p.title)}">
+    ${fields.length ? `<div class="ib-form">${fields.map(f => `
+      <div class="lab">${esc(f.label)}</div>
+      ${f.type === 'long'
+        ? `<textarea class="field" rows="3" data-ib="${f.key}">${esc(info[f.key] || '')}</textarea>`
+        : `<input class="field" data-ib="${f.key}" value="${esc(info[f.key] || '')}">`}
+    `).join('')}</div>` : ''}
     <div class="editor-wrap"><div id="ed"></div></div>
     <div class="toolbar" id="tb"></div>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('save').onclick = async () => {
     const title = document.getElementById('ttl').value;
     const body = editor.getHTML();
-    run('UPDATE pages SET title=?, body=?, updated_at=? WHERE id=?',
-      [title, body, Date.now(), id]);
+    if (fields.length) {
+      fields.forEach(f => {
+        const el = document.querySelector(`[data-ib="${f.key}"]`);
+        if (el) info[f.key] = el.value;
+      });
+    }
+    run('UPDATE pages SET title=?, body=?, updated_at=?, infobox=? WHERE id=?',
+      [title, body, Date.now(), JSON.stringify(info), id]);
     await saveDB();
     editor.destroy(); editor = null;
     replaceCur('read', id);
@@ -304,6 +433,17 @@ function screenEdit(id) {
   window.addEventListener('open-wikilink-picker', pickerListener);
   buildToolbar();
   updateTb();
+}
+
+/* ---------- dupliquer ---------- */
+async function duplicatePage(id) {
+  const p = getPage(id);
+  if (!p) return;
+  const nid = uid(), now = Date.now();
+  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox) VALUES (?,?,?,?,?,?,?,?,?)',
+    [nid, (p.title || 'Sans titre') + ' (copie)', p.body || '', now, now, p.is_inbox, p.space_id, p.template_id, p.infobox || '{}']);
+  await saveDB();
+  go('read', nid);
 }
 
 /* ---------- picker wikilink ---------- */
@@ -420,6 +560,9 @@ function render() {
   else if (cur.name === 'space') screenSpace(cur.param);
   else if (cur.name === 'newspace') screenNewSpace();
   else if (cur.name === 'classer') screenClasser(cur.param);
+  else if (cur.name === 'templates') screenTemplates();
+  else if (cur.name === 'newtemplate') screenNewTemplate();
+  else if (cur.name === 'template') screenTemplate(cur.param);
   window.scrollTo(0, 0);
 }
 
