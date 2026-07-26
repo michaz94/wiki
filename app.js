@@ -97,18 +97,30 @@ function screenHome() {
   const spaces = q('SELECT * FROM spaces ORDER BY created_at');
   const recents = q('SELECT * FROM pages ORDER BY updated_at DESC LIMIT 5');
   app.innerHTML = `
-    <header class="top"><h1>Notes</h1></header>
+    <header class="top brand">
+      <span class="logo">📖</span>
+      <h1>Notes</h1>
+    </header>
+    <div class="hero">
+      <div class="hero-txt">
+        <div class="hero-k">TON WIKI</div>
+        <div class="hero-t">Salut Michaz 👋</div>
+        <div class="hero-s">Capture, classe, retrouve tout.</div>
+      </div>
+      <div class="hero-art">✨</div>
+    </div>
     <main>
       <button class="btn-accent quick" id="quick">+ Note rapide</button>
       <div class="card row" id="toInbox">
-        <div class="grow"><div class="t">📥 Inbox</div><div class="p">Idées non classées</div></div>
+        <div class="emo" style="background:#ffffff14">📥</div>
+        <div class="grow"><div class="t">Inbox</div><div class="p">Idées non classées</div></div>
         ${count ? `<span class="badge">${count}</span>` : ''}
       </div>
       <div class="card row" id="toTpl">
         <div class="emo" style="background:#ffffff14">🧩</div>
         <div class="grow"><div class="t">Templates</div><div class="p">Fiches perso, lieu, tâche…</div></div>
       </div>
-      <div class="sec">ESPACES</div>
+      <div class="sec"><span class="sec-ico">🗂</span>ESPACES</div>
       ${spaces.map(s => {
         const n = q('SELECT COUNT(*) c FROM pages WHERE space_id=?', [s.id])[0].c;
         return `<div class="card space-card" data-sid="${s.id}" style="border-left:4px solid ${s.color}">
@@ -117,7 +129,7 @@ function screenHome() {
         </div>`;
       }).join('')}
       <button class="ghost-add" id="newSpace">+ Créer un espace</button>
-      ${recents.length ? `<div class="sec">RÉCENTES</div>` : ''}
+      ${recents.length ? `<div class="sec"><span class="sec-ico">🕘</span>RÉCENTES</div>` : ''}
       ${recents.map(p => cardHTML(p)).join('')}
     </main>`;
   document.getElementById('quick').onclick = () => quickNote(null);
@@ -210,9 +222,9 @@ function screenTemplate(id) {
     </header>
     <main>
       <button class="btn-accent quick" id="np">+ Nouvelle page</button>
-      <div class="sec">CHAMPS</div>
+      <div class="sec"><span class="sec-ico">🧾</span>CHAMPS</div>
       ${fields.map(f => `<div class="card row"><div class="grow"><div class="t">${esc(f.label)}</div><div class="meta">${f.type === 'long' ? 'Texte long' : 'Texte'}</div></div></div>`).join('') || '<div class="empty">Aucun champ.</div>'}
-      <div class="sec">PAGES</div>
+      <div class="sec"><span class="sec-ico">📄</span>PAGES</div>
       ${pages.map(p => cardHTML(p)).join('') || '<div class="empty">Aucune page avec ce template.</div>'}
     </main>`;
   document.getElementById('bk').onclick = back;
@@ -366,7 +378,7 @@ function screenRead(id) {
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
       ${ibRows.length ? `<div class="infobox"><div class="ib-head">${esc(tpl.emoji || '')} ${esc(tpl.name)}</div>${ibRows.map(f => `<div class="ib-row"><div class="ib-k">${esc(f.label)}</div><div class="ib-v">${esc(info[f.key])}</div></div>`).join('')}</div>` : ''}
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
-      ${bl.length ? `<div class="sec">LIENS ENTRANTS</div>${bl.map(x => cardHTML(x)).join('')}` : ''}
+      ${bl.length ? `<div class="sec"><span class="sec-ico">🔗</span>LIENS ENTRANTS</div>${bl.map(x => cardHTML(x)).join('')}` : ''}
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
