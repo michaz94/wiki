@@ -1,4 +1,4 @@
-import { Editor, Node, InputRule, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
+import { Editor, Node, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
 
 let db, editor = null, pickerListener = null;
@@ -29,12 +29,6 @@ const Wikilink = Node.create({
       'data-wikilink': node.attrs.id,
       class: 'wikilink'
     }), node.attrs.label || 'Page'];
-  }
-});
-    return {
-      id: { default: null },
-      label: { default: '' }
-    };
   }
 });
 
