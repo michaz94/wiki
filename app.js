@@ -4,6 +4,7 @@ import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
 let db, editor = null;
 let stack = [{ name: 'home' }];
 const app = document.getElementById('app');
+const COLORS = ['#f5c518','#ff6b6b','#4ecdc4','#a78bfa','#6bcb77','#ff9f43','#54a0ff','#f368e0'];
 
 /* ---------- base de données ---------- */
 async function initDB() {
@@ -20,7 +21,13 @@ async function initDB() {
   db = bytes ? new SQL.Database(bytes) : new SQL.Database();
   db.run(`CREATE TABLE IF NOT EXISTS pages (
     id TEXT PRIMARY KEY, title TEXT, body TEXT,
-    created_at INTEGER, updated_at INTEGER, is_inbox INTEGER DEFAULT 1)`);
+    created_at INTEGER, updated_at INTEGER, is_inbox INTEGER DEFAULT 1, space_id TEXT)`);
+  db.run(`CREATE TABLE IF NOT EXISTS spaces (
+    id TEXT PRIMARY KEY, name TEXT, emoji TEXT, color TEXT, created_at INTEGER)`);
+  const cols = q('PRAGMA table_info(pages)').map(c => c.name);
+  if (!cols.includes('space_id')) db.run('ALTER TABLE pages ADD COLUMN space_id TEXT');
+  try { await navigator.storage.persist(); } catch (e) {}
+  await saveDB();
 }
 async function saveDB() {
   const data = db.export();
@@ -40,8 +47,9 @@ function q(sql, params = []) {
 }
 function run(sql, params = []) { db.run(sql, params); }
 function getPage(id) { return q('SELECT * FROM pages WHERE id=?', [id])[0]; }
+function getSpace(id) { return q('SELECT * FROM spaces WHERE id=?', [id])[0]; }
 
-/* ---------- petits utilitaires ---------- */
+/* ---------- utilitaires ---------- */
 const esc = s => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const strip = h => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 const fmt = ts => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -52,28 +60,124 @@ function go(name, param) { stack.push({ name, param }); render(); }
 function back() { stack.pop(); if (!stack.length) stack = [{ name: 'home' }]; render(); }
 function replaceCur(name, param) { stack.pop(); stack.push({ name, param }); render(); }
 
-/* ---------- écrans ---------- */
+/* ---------- accueil ---------- */
 function screenHome() {
-  const count = q('SELECT COUNT(*) c FROM pages WHERE is_inbox=1')[0].c;
+  const count = q('SELECT COUNT(*) c FROM pages WHERE space_id IS NULL')[0].c;
+  const spaces = q('SELECT * FROM spaces ORDER BY created_at');
   const recents = q('SELECT * FROM pages ORDER BY updated_at DESC LIMIT 5');
   app.innerHTML = `
     <header class="top"><h1>Notes</h1></header>
     <main>
       <button class="btn-accent quick" id="quick">+ Note rapide</button>
       <div class="card row" id="toInbox">
-        <div class="grow"><div class="t">Inbox</div><div class="p">Idées non classées</div></div>
+        <div class="grow"><div class="t">📥 Inbox</div><div class="p">Idées non classées</div></div>
         ${count ? `<span class="badge">${count}</span>` : ''}
       </div>
-      ${recents.length ? `<h2 style="font-size:14px;color:var(--muted);margin:18px 0 8px">RÉCENTES</h2>` : ''}
+      <div class="sec">ESPACES</div>
+      ${spaces.map(s => {
+        const n = q('SELECT COUNT(*) c FROM pages WHERE space_id=?', [s.id])[0].c;
+        return `<div class="card space-card" data-sid="${s.id}" style="border-left:4px solid ${s.color}">
+          <div class="emo" style="background:${s.color}26">${esc(s.emoji || '📁')}</div>
+          <div class="grow"><div class="t">${esc(s.name)}</div><div class="meta">${n} page${n > 1 ? 's' : ''}</div></div>
+        </div>`;
+      }).join('')}
+      <button class="ghost-add" id="newSpace">+ Créer un espace</button>
+      ${recents.length ? `<div class="sec">RÉCENTES</div>` : ''}
       ${recents.map(p => cardHTML(p)).join('')}
     </main>`;
-  document.getElementById('quick').onclick = quickNote;
+  document.getElementById('quick').onclick = () => quickNote(null);
   document.getElementById('toInbox').onclick = () => go('inbox');
+  document.getElementById('newSpace').onclick = () => go('newspace');
+  app.querySelectorAll('[data-sid]').forEach(c => c.onclick = () => go('space', c.dataset.sid));
   wireCards();
 }
 
+/* ---------- espace ---------- */
+function screenSpace(id) {
+  const s = getSpace(id);
+  if (!s) { back(); return; }
+  const rows = q('SELECT * FROM pages WHERE space_id=? ORDER BY updated_at DESC', [id]);
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <div class="title">${esc(s.emoji || '')} ${esc(s.name)}</div>
+    </header>
+    <main>
+      <button class="btn-accent quick" id="add" style="background:${s.color}">+ Note ici</button>
+      ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucune page dans cet espace.</div>`}
+    </main>`;
+  document.getElementById('bk').onclick = back;
+  document.getElementById('add').onclick = () => quickNote(id);
+  wireCards();
+}
+
+/* ---------- nouvel espace ---------- */
+function screenNewSpace() {
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <h1>Nouvel espace</h1>
+    </header>
+    <main>
+      <div class="lab">Emoji</div>
+      <input class="field" id="emo" maxlength="4" placeholder="📕" value="📕">
+      <div class="lab">Nom</div>
+      <input class="field" id="nm" placeholder="Roman, projet…">
+      <div class="lab">Couleur</div>
+      <div class="swatches" id="sw">${COLORS.map((c, i) => `<div class="sw${i === 0 ? ' sel' : ''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+      <button class="btn-accent quick" id="go">Créer</button>
+    </main>`;
+  let color = COLORS[0];
+  document.getElementById('bk').onclick = back;
+  document.getElementById('sw').querySelectorAll('.sw').forEach(el => el.onclick = () => {
+    color = el.dataset.c;
+    document.querySelectorAll('#sw .sw').forEach(x => x.classList.toggle('sel', x === el));
+  });
+  document.getElementById('go').onclick = async () => {
+    const name = document.getElementById('nm').value.trim();
+    if (!name) return;
+    const emoji = document.getElementById('emo').value.trim() || '📁';
+    const id = uid();
+    run('INSERT INTO spaces (id,name,emoji,color,created_at) VALUES (?,?,?,?,?)', [id, name, emoji, color, Date.now()]);
+    await saveDB();
+    replaceCur('space', id);
+  };
+}
+
+/* ---------- classer ---------- */
+function screenClasser(id) {
+  const p = getPage(id);
+  if (!p) { back(); return; }
+  const spaces = q('SELECT * FROM spaces ORDER BY name');
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <h1>Classer</h1>
+    </header>
+    <main>
+      <div class="card row pick" data-pick="">
+        <div class="emo" style="background:#ffffff14">📥</div>
+        <div class="grow"><div class="t">Inbox — non classé</div></div>
+        ${!p.space_id ? '<span class="badge">✓</span>' : ''}
+      </div>
+      ${spaces.map(s => `<div class="card row pick" data-pick="${s.id}" style="border-left:4px solid ${s.color}">
+        <div class="emo" style="background:${s.color}26">${esc(s.emoji || '📁')}</div>
+        <div class="grow"><div class="t">${esc(s.name)}</div></div>
+        ${p.space_id === s.id ? '<span class="badge">✓</span>' : ''}
+      </div>`).join('')}
+    </main>`;
+  document.getElementById('bk').onclick = back;
+  app.querySelectorAll('.pick').forEach(el => el.onclick = async () => {
+    const sid = el.dataset.pick || null;
+    run('UPDATE pages SET space_id=?, is_inbox=?, updated_at=? WHERE id=?', [sid, sid ? 0 : 1, Date.now(), id]);
+    await saveDB();
+    replaceCur('read', id);
+  });
+}
+
+/* ---------- inbox ---------- */
 function screenInbox() {
-  const rows = q('SELECT * FROM pages WHERE is_inbox=1 ORDER BY updated_at DESC');
+  const rows = q('SELECT * FROM pages WHERE space_id IS NULL ORDER BY updated_at DESC');
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -84,10 +188,11 @@ function screenInbox() {
       ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Rien dans l'Inbox.<br>Tout ce que tu captures arrive ici.</div>`}
     </main>`;
   document.getElementById('bk').onclick = back;
-  document.getElementById('plus').onclick = quickNote;
+  document.getElementById('plus').onclick = () => quickNote(null);
   wireCards();
 }
 
+/* ---------- cartes ---------- */
 function cardHTML(p) {
   const title = p.title?.trim() || 'Sans titre';
   const prev = strip(p.body).slice(0, 120);
@@ -102,9 +207,14 @@ function wireCards() {
     c.onclick = () => go('read', c.dataset.id));
 }
 
+/* ---------- lecture ---------- */
 function screenRead(id) {
   const p = getPage(id);
   if (!p) { back(); return; }
+  const s = p.space_id ? getSpace(p.space_id) : null;
+  const chip = s
+    ? `<span style="color:${s.color}">${esc(s.emoji || '')}</span> ${esc(s.name)}`
+    : `📥 Inbox`;
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -112,13 +222,16 @@ function screenRead(id) {
       <button class="btn-ghost" id="ed">Modifier</button>
     </header>
     <article class="read">
+      <button class="chip" id="chip">${chip}</button>
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
+  document.getElementById('chip').onclick = () => go('classer', id);
 }
 
+/* ---------- édition ---------- */
 function screenEdit(id) {
   const p = getPage(id);
   if (!p) { back(); return; }
@@ -141,7 +254,6 @@ function screenEdit(id) {
     editor.destroy(); editor = null;
     replaceCur('read', id);
   };
-
   editor = new Editor({
     element: document.getElementById('ed'),
     content: p.body || '',
@@ -194,10 +306,10 @@ function updateTb() {
 }
 
 /* ---------- capture ---------- */
-async function quickNote() {
+async function quickNote(spaceId) {
   const id = uid(), now = Date.now();
-  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox) VALUES (?,?,?,?,?,1)',
-    [id, '', '', now, now]);
+  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id) VALUES (?,?,?,?,?,?,?)',
+    [id, '', '', now, now, spaceId ? 0 : 1, spaceId]);
   await saveDB();
   go('edit', id);
 }
@@ -210,6 +322,9 @@ function render() {
   else if (cur.name === 'inbox') screenInbox();
   else if (cur.name === 'read') screenRead(cur.param);
   else if (cur.name === 'edit') screenEdit(cur.param);
+  else if (cur.name === 'space') screenSpace(cur.param);
+  else if (cur.name === 'newspace') screenNewSpace();
+  else if (cur.name === 'classer') screenClasser(cur.param);
   window.scrollTo(0, 0);
 }
 
