@@ -13,9 +13,12 @@ button{font-family:inherit}
 .top{position:sticky;top:0;z-index:10;background:var(--bg);
   display:flex;align-items:center;gap:10px;
   padding:12px 14px;border-bottom:1px solid var(--line)}
-.top h1{font-size:20px;margin:0;flex:1;font-weight:700}
+.top h1{font-size:20px;margin:0;flex:1;font-weight:800;letter-spacing:-.01em}
 .top .title{flex:1;font-size:17px;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top.brand .logo{width:34px;height:34px;border-radius:9px;
+  background:rgba(245,197,24,.15);display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex:0 0 auto}
 .icon-btn{background:none;border:none;color:var(--text);
   font-size:20px;padding:6px 8px;cursor:pointer}
 .btn-accent{background:var(--accent);color:#000;border:none;
@@ -24,13 +27,24 @@ button{font-family:inherit}
 .btn-ghost{background:none;color:var(--accent);border:none;
   font-weight:700;font-size:14px;padding:8px 6px;cursor:pointer}
 
+/* bandeau hero type Fandom */
+.hero{position:relative;overflow:hidden;
+  background:linear-gradient(120deg,#4b0f5e 0%,#2a0a3a 60%,#16061c 100%);
+  padding:18px 16px 20px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--line)}
+.hero-k{font-size:11px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+.hero-t{font-size:22px;font-weight:800;margin-top:2px}
+.hero-s{color:#cfa8dd;font-size:13px;margin-top:4px}
+.hero-art{margin-left:auto;font-size:52px;
+  filter:drop-shadow(0 0 16px rgba(245,197,24,.5))}
+
 main{flex:1;padding:14px;padding-bottom:110px}
 
 .quick{width:100%;padding:16px;font-size:16px;border-radius:var(--radius);margin-bottom:12px}
 .card{background:var(--surface);border-radius:var(--radius);
   padding:14px;margin-bottom:10px;cursor:pointer;border:1px solid var(--line)}
 .card:active{background:var(--surface2)}
-.card .t{font-weight:600;font-size:15px}
+.card .t{font-weight:700;font-size:15px}
 .card .p{color:var(--muted);font-size:13px;margin-top:3px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card .d{color:var(--muted);font-size:12px;margin-top:6px}
@@ -40,8 +54,11 @@ main{flex:1;padding:14px;padding-bottom:110px}
   font-size:12px;border-radius:20px;padding:2px 9px;min-width:24px;text-align:center}
 .empty{color:var(--muted);text-align:center;margin-top:40px;font-size:14px}
 
-.sec{font-size:12px;color:var(--muted);font-weight:700;
-  letter-spacing:.08em;margin:20px 2px 8px}
+/* titres de section type Fandom : icône jaune + blanc gras */
+.sec{display:flex;align-items:center;gap:8px;color:var(--text);
+  font-size:16px;font-weight:800;margin:22px 2px 10px}
+.sec-ico{font-size:18px;filter:drop-shadow(0 0 6px rgba(245,197,24,.4))}
+
 .space-card{display:flex;align-items:center;gap:12px}
 .emo{flex:0 0 40px;width:40px;height:40px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-size:20px}
@@ -62,13 +79,47 @@ main{flex:1;padding:14px;padding-bottom:110px}
   border-radius:10px;color:var(--text);font-size:16px;
   padding:12px 14px;outline:none;font-family:inherit}
 .field:focus{border-color:var(--accent)}
+textarea.field{resize:vertical;min-height:64px}
 .swatches{display:flex;gap:10px;flex-wrap:wrap;padding:4px 2px}
 .sw{width:38px;height:38px;border-radius:50%;cursor:pointer;
   border:2px solid transparent}
 .sw.sel{border-color:#fff;box-shadow:0 0 0 2px #000 inset}
+.field-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.field-row .field{flex:1}
+.mini-select{background:var(--surface2);color:var(--text);
+  border:1px solid var(--line);border-radius:8px;padding:10px 8px;
+  font-size:14px;font-family:inherit}
+
+/* infobox lecture */
+.infobox{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);margin:12px 0 4px;overflow:hidden}
+.ib-head{background:var(--surface2);padding:10px 14px;font-weight:700;
+  font-size:14px;border-bottom:1px solid var(--line)}
+.ib-row{display:flex;gap:10px;padding:8px 14px;
+  border-bottom:1px solid var(--line);font-size:14px}
+.ib-row:last-child{border-bottom:none}
+.ib-k{flex:0 0 38%;color:var(--muted);font-weight:600}
+.ib-v{flex:1}
+.ib-form{padding:0 16px}
+
+/* wikilinks */
+.wikilink{color:var(--accent);font-weight:600;text-decoration:none;
+  border-bottom:1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  cursor:pointer}
+.wikilink.dead{color:var(--muted);text-decoration:line-through;border-bottom:none}
+.ProseMirror .wikilink{background:color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius:4px;padding:1px 4px}
+
+/* feuille de choix (picker) */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);
+  display:flex;align-items:flex-end}
+.ov-box{width:100%;background:var(--surface);border-radius:16px 16px 0 0;
+  padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom));
+  max-height:70vh;display:flex;flex-direction:column;gap:10px}
+.ov-list{overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 .read{padding:6px 16px 120px}
-.read h1.page-title{font-size:24px;margin:10px 0 14px;font-weight:700}
+.read h1.page-title{font-size:24px;margin:10px 0 14px;font-weight:800}
 .read h2{font-size:20px;margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .read h3{font-size:17px;margin:18px 0 6px}
 .read h4{font-size:15px;margin:16px 0 6px;color:var(--accent)}
