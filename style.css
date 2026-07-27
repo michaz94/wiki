@@ -407,9 +407,6 @@ textarea.field{resize:vertical;min-height:70px}
   margin:14px 22px
 }
 /* ============ AJUSTEMENTS FOND & TAILLES ============ */
-:root, [data-theme="dark"]{
-  --bg: #161618;   /* gris foncé au lieu de noir pur */
-}
 
 /* Cartes Re-plongez-vous plus petites */
 .rcard{
