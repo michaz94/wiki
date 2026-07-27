@@ -118,9 +118,27 @@ function pickImage(maxW = 800) {
 }
 
 /* ---------- navigation ---------- */
-function go(name, param) { window._backWarned = false; stack.push({ name, param }); render(); }
-function back() { stack.pop(); if (!stack.length) stack = [{ name: 'home' }]; render(); }
-function replaceCur(name, param) { stack.pop(); stack.push({ name, param }); render(); }
+let browserNavId = 1;
+
+function go(name, param) {
+  stack.push({ name, param });
+  browserNavId++;
+  history.pushState({ page: 'app', navId: browserNavId }, '');
+  render();
+}
+
+function back() {
+  if (stack.length > 1) {
+    history.back(); // le popstate fera le vrai retour
+  }
+}
+
+function replaceCur(name, param) {
+  stack.pop();
+  stack.push({ name, param });
+  history.replaceState({ page: 'app', navId: browserNavId }, '');
+  render();
+}
 
 /* ---------- compteur global ---------- */
 function getStats() {
@@ -1101,44 +1119,28 @@ function render() {
   window.scrollTo(0, 0);
 }
 
-/* ---------- gestion du bouton retour Android ---------- */
-function setupBackButton() {
-  history.replaceState({ wiki: 1 }, '');
-  history.pushState({ wiki: 1 }, '');
+/* ---------- navigation ---------- */
+let browserNavId = 1;
 
-  let exiting = false;
+function go(name, param) {
+  stack.push({ name, param });
+  browserNavId++;
+  history.pushState({ page: 'app', navId: browserNavId }, '');
+  render();
+}
 
-  window.addEventListener('popstate', () => {
-    if (exiting) return;
+function back() {
+  if (stack.length > 1) {
+    history.back(); // le popstate fera le vrai retour
+  }
+}
 
-    // 1) Un overlay ouvert ? → le fermer, rester dans l'app
-    const ov = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
-    if (ov) { ov.remove(); history.pushState({ wiki: 1 }, ''); return; }
-
-    // 2) Écran interne ? → reculer dans l'app
-    if (stack.length > 1) {
-      if (editor) { editor.destroy(); editor = null; }
-      stack.pop();
-      render();
-      window._backWarned = false;
-      history.pushState({ wiki: 1 }, '');
-      return;
-    }
-
-    // 3) Accueil : 1er appui = avertir, 2e = quitter
-    if (!window._backWarned) {
-      window._backWarned = true;
-      toast('Appuie encore pour quitter');
-      setTimeout(() => { window._backWarned = false; }, 2000);
-      history.pushState({ wiki: 1 }, '');
-      return;
-    }
-
-    // 4) Sortie volontaire
-    window._backWarned = false;
-    exiting = true;
-    history.go(-2);
-  });
+function replaceCur(name, param) {
+  stack.pop();
+  stack.push({ name, param });
+  history.replaceState({ page: 'app', navId: browserNavId }, '');
+  render();
+}
 }
 /* ---------- démarrage ---------- */
 app.innerHTML = '<div class="empty">Chargement…</div>';
