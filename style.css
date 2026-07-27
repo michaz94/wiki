@@ -487,6 +487,39 @@ textarea.field{resize:vertical;min-height:70px}
   border-radius:0 0 12px 12px
 }
 
+/* ============ RECADRAGE / ZOOM DE COUVERTURE ============ */
+.crop-overlay{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(0,0,0,.92);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px
+}
+.crop-box{
+  width:100%;max-width:520px;
+  display:flex;flex-direction:column;gap:14px
+}
+.crop-frame{
+  position:relative;
+  width:100%;
+  overflow:hidden;
+  border-radius:10px;
+  border:2px solid var(--accent);
+  background:#000;
+  touch-action:none
+}
+.crop-frame img{
+  position:absolute;left:50%;top:50%;
+  max-width:none;max-height:none;
+  user-select:none;-webkit-user-drag:none;
+  cursor:grab
+}
+.crop-hint{
+  color:var(--muted);font-size:12px;text-align:center
+}
+.crop-actions{
+  display:flex;gap:10px;justify-content:flex-end
+}
+
 /* ============ IMAGE PICKER (espaces) ============ */
 .img-picker{
   display:flex;
