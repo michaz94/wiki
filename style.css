@@ -696,7 +696,7 @@ textarea.field{resize:vertical;min-height:70px}
 
 /* Cases grises plus compactes type Fandom */
 .rcard {
-  flex: 0 0 172px !important;
+  flex: 0 0 200px !important;
   max-width: 72vw;
   padding: 8px !important;
   border-radius: 6px !important;
