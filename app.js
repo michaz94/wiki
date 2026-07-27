@@ -913,6 +913,103 @@ function openFabMenu(spaceId) {
     createFromTemplate(tid, spaceId);
   });
 }
+/* ---------- export / import de la base ---------- */
+async function exportDB() {
+  try {
+    const data = db.export();
+    const blob = new Blob([data], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `wiki-sauvegarde-${date}.db`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Sauvegarde téléchargée ✓');
+  } catch (e) {
+    toast('Erreur : ' + e.message, true);
+  }
+}
+
+async function importDB() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.db,application/octet-stream';
+  inp.onchange = async () => {
+    const file = inp.files?.[0];
+    if (!file) return;
+    if (file.size < 100) { toast('Fichier trop petit, invalide.', true); return; }
+    if (file.size > 100 * 1024 * 1024) { toast('Fichier trop gros (>100 Mo).', true); return; }
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      // Vérifie l'en-tête SQLite : "SQLite format 3\0"
+      const header = String.fromCharCode(...bytes.slice(0, 15));
+      if (header !== 'SQLite format 3') {
+        toast('Ce fichier n\'est pas une sauvegarde valide.', true);
+        return;
+      }
+      const SQL = await initSqlJs({
+        locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/' + f
+      });
+      let testDb;
+      try {
+        testDb = new SQL.Database(bytes);
+        // Test : la table pages existe-t-elle ?
+        testDb.exec('SELECT COUNT(*) FROM pages');
+      } catch (e) {
+        if (testDb) testDb.close();
+        toast('Sauvegarde corrompue ou incompatible.', true);
+        return;
+      }
+      // Confirmation avant écrasement
+      const ov = document.createElement('div');
+      ov.className = 'confirm-overlay';
+      ov.innerHTML = `
+        <div class="confirm-box">
+          <h3>Restaurer cette sauvegarde ?</h3>
+          <p>⚠️ Toutes tes données actuelles seront <b>remplacées</b>. Cette action est irréversible.</p>
+          <div class="confirm-actions">
+            <button class="cancel">Annuler</button>
+            <button class="danger">Restaurer</button>
+          </div>
+        </div>`;
+      document.body.appendChild(ov);
+      ov.querySelector('.cancel').onclick = () => { testDb.close(); ov.remove(); };
+      ov.querySelector('.danger').onclick = async () => {
+        try {
+          db.close();
+          db = testDb;
+          await saveDB();
+          ov.remove();
+          stack = [{ name: 'home' }];
+          render();
+          toast('Sauvegarde restaurée ✓');
+        } catch (e) {
+          toast('Erreur restauration : ' + e.message, true);
+        }
+      };
+      ov.onclick = e => { if (e.target === ov) { testDb.close(); ov.remove(); } };
+    } catch (e) {
+      toast('Impossible de lire le fichier : ' + e.message, true);
+    }
+  };
+  inp.click();
+}
+
+function toast(msg, isError = false) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' err' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  }, 2600);
+}
 async function createFromTemplate(tid, spaceId) {
   const id = uid(), now = Date.now();
   run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox) VALUES (?,?,?,?,?,?,?,?,?)',
