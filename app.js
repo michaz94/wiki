@@ -1103,7 +1103,7 @@ function render() {
 
 /* ---------- gestion du bouton retour Android ---------- */
 function setupBackButton() {
-  // On pousse DEUX états : un tampon + l'état actif
+  // On pousse un état tampon
   history.pushState({ page: 'app' }, '');
   history.pushState({ page: 'app' }, '');
 
@@ -1121,6 +1121,8 @@ function setupBackButton() {
       stack.pop();
       render();
       history.pushState({ page: 'app' }, '');
+      // Important : on remet à zéro l'avertissement, pour ne pas quitter par erreur
+      window._backWarned = false;
     } else {
       // On est sur l'accueil : demande confirmation avant de quitter
       if (!window._backWarned) {
@@ -1129,7 +1131,7 @@ function setupBackButton() {
         setTimeout(() => { window._backWarned = false; }, 2000);
         history.pushState({ page: 'app' }, '');
       } else {
-        // 2ème pression rapide : on quitte vraiment
+        // 2ème pression rapide sur l'accueil : on quitte
         window._backWarned = false;
         history.back();
       }
