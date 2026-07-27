@@ -8,7 +8,7 @@
   --neutral-400:  #e8d878;   /* --surface2 = THUMBNAILS → JAUNE MOYEN */
   --neutral-500:  #c4a900;
   --neutral-600:  #504f4f;
-  --neutral-700:  #6b5d00;   /* --muted = TEXTE GRIS → BRUN DORÉ */
+  --neutral-700:  ##787777;   /* --muted = TEXTE GRIS → BRUN DORÉ */
   --neutral-800:  #3d3400;
   --neutral-900:  #e0e0e0;;   /* --text = TEXTE PRINCIPAL → PRESQUE NOIR */
   --neutral-1000: #fff;
