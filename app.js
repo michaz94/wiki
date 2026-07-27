@@ -273,7 +273,16 @@ function screenSearch() {
     const f = input.value.trim();
     if (!f) { res.innerHTML = '<div class="empty">Tape un mot : titres et textes sont fouillés.</div>'; return; }
     const needle = normalizeAccents(f);
-    con
+    const all = q('SELECT * FROM pages ORDER BY updated_at DESC');
+    const rows = all.filter(p =>
+      normalizeAccents(p.title).includes(needle) ||
+      normalizeAccents(strip(p.body)).includes(needle)
+    ).slice(0, 30);
+    res.innerHTML = rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucun résultat pour « ${esc(f)} ».</div>`;
+    wireCards();
+  };
+  setTimeout(() => input.focus(), 60);
+}
 
 /* ---------- templates ---------- */
 function screenTemplates() {
