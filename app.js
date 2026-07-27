@@ -87,6 +87,7 @@ const fmtLong = ts => new Date(ts).toLocaleString('fr-FR', {
   day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
 });
 const uid = () => crypto.randomUUID();
+/* enlève les accents pour comparer du texte sans en tenir compte (école -> ecole) */
 const normalizeAccents = s => (s ?? '')
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
@@ -121,7 +122,154 @@ function pickImage(maxW = 800) {
   });
 }
 
-/* ---------- navigation ---------- */
+/* ---------- sélection d'image AVEC recadrage/zoom (pour les couvertures) ---------- */
+function pickImageWithCrop(aspect = 16 / 9, maxOutW = 1200) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files?.[0];
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => openCropper(img, aspect, maxOutW, resolve);
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    inp.click();
+  });
+}
+
+function openCropper(img, aspect, maxOutW, resolve) {
+  const ov = document.createElement('div');
+  ov.className = 'crop-overlay';
+  ov.innerHTML = `
+    <div class="crop-box">
+      <div class="crop-frame" id="cropFrame">
+        <img id="cropImg" src="${img.src}" draggable="false">
+      </div>
+      <div class="crop-hint">Glisse pour repositionner, pince pour zoomer</div>
+      <div class="crop-actions">
+        <button class="btn-ghost" id="cropCancel">Annuler</button>
+        <button class="btn-accent" id="cropOk">Valider le cadrage</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const frame = ov.querySelector('#cropFrame');
+  const el = ov.querySelector('#cropImg');
+
+  // état : position (x,y en px, centre de l'image relatif au centre du cadre) + zoom
+  let scale, minScale;
+  let x = 0, y = 0;
+
+  function frameSize() {
+    const r = frame.getBoundingClientRect();
+    return { w: r.width, h: r.height };
+  }
+  function fitInitial() {
+    const { w, h } = frameSize();
+    // scale minimal pour que l'image couvre tout le cadre (comme background-size:cover)
+    minScale = Math.max(w / img.width, h / img.height);
+    scale = minScale;
+    x = 0; y = 0;
+    apply();
+  }
+  function clamp() {
+    const { w, h } = frameSize();
+    const iw = img.width * scale, ih = img.height * scale;
+    const maxX = Math.max(0, (iw - w) / 2);
+    const maxY = Math.max(0, (ih - h) / 2);
+    x = Math.min(maxX, Math.max(-maxX, x));
+    y = Math.min(maxY, Math.max(-maxY, y));
+  }
+  function apply() {
+    clamp();
+    el.style.width = (img.width * scale) + 'px';
+    el.style.height = (img.height * scale) + 'px';
+    el.style.transform = `translate(-50%,-50%) translate(${x}px,${y}px)`;
+  }
+
+  // le cadre garde le ratio demandé (16/9 par défaut)
+  frame.style.aspectRatio = String(aspect);
+  requestAnimationFrame(fitInitial);
+  window.addEventListener('resize', fitInitial);
+
+  // --- glisser (souris + tactile 1 doigt) ---
+  let dragging = false, lastPx = 0, lastPy = 0;
+  function pointerDown(px, py) { dragging = true; lastPx = px; lastPy = py; }
+  function pointerMove(px, py) {
+    if (!dragging) return;
+    x += px - lastPx; y += py - lastPy;
+    lastPx = px; lastPy = py;
+    apply();
+  }
+  function pointerUp() { dragging = false; }
+
+  el.addEventListener('mousedown', e => { pointerDown(e.clientX, e.clientY); e.preventDefault(); });
+  window.addEventListener('mousemove', e => pointerMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup', pointerUp);
+
+  // --- tactile : glisser à 1 doigt, pincer à 2 doigts pour zoomer ---
+  let pinchDist = null, pinchScale = 1;
+  function dist(t0, t1) { return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY); }
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      pointerDown(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2) {
+      dragging = false;
+      pinchDist = dist(e.touches[0], e.touches[1]);
+      pinchScale = scale;
+    }
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && dragging) {
+      pointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    } else if (e.touches.length === 2 && pinchDist) {
+      const d = dist(e.touches[0], e.touches[1]);
+      scale = Math.min(minScale * 4, Math.max(minScale, pinchScale * (d / pinchDist)));
+      apply();
+    }
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (e.touches.length === 0) { pointerUp(); pinchDist = null; }
+  });
+
+  const close = () => {
+    window.removeEventListener('resize', fitInitial);
+    ov.remove();
+  };
+  ov.querySelector('#cropCancel').onclick = () => { close(); resolve(null); };
+  ov.querySelector('#cropOk').onclick = () => {
+    // on "aplatit" le cadrage choisi sur un canvas à la taille finale
+    const outW = maxOutW;
+    const outH = Math.round(outW / aspect);
+    const canvas = document.createElement('canvas');
+    canvas.width = outW; canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    const { w: fw, h: fh } = frameSize();
+    // ratio entre la taille réelle du cadre à l'écran et la taille de sortie voulue
+    const k = outW / fw;
+    // position du coin haut-gauche de l'image affichée, relative au coin haut-gauche du cadre
+    const dispW = img.width * scale, dispH = img.height * scale;
+    const left = (fw - dispW) / 2 + x;
+    const top = (fh - dispH) / 2 + y;
+    ctx.clearRect(0, 0, outW, outH);
+    ctx.drawImage(
+      img,
+      0, 0, img.width, img.height,
+      left * k, top * k, dispW * k, dispH * k
+    );
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    close();
+    resolve(dataUrl);
+  };
+}
+
+
 let browserNavId = 1;
 
 function go(name, param) {
@@ -273,6 +421,7 @@ function screenSearch() {
     const f = input.value.trim();
     if (!f) { res.innerHTML = '<div class="empty">Tape un mot : titres et textes sont fouillés.</div>'; return; }
     const needle = normalizeAccents(f);
+    // On récupère toutes les pages puis on filtre en JS (accents ignorés des deux côtés).
     const all = q('SELECT * FROM pages ORDER BY updated_at DESC');
     const rows = all.filter(p =>
       normalizeAccents(p.title).includes(needle) ||
@@ -758,7 +907,7 @@ function screenEdit(id) {
     const pickBtn = document.getElementById('pickCover');
     const rmBtn = document.getElementById('rmCover');
     if (pickBtn) pickBtn.onclick = async () => {
-      const img = await pickImage(1200);
+      const img = await pickImageWithCrop(16 / 9, 1200);
       if (img) {
         cover = img;
         refreshCover();
