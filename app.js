@@ -87,6 +87,10 @@ const fmtLong = ts => new Date(ts).toLocaleString('fr-FR', {
   day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
 });
 const uid = () => crypto.randomUUID();
+const normalizeAccents = s => (s ?? '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 
 /* ---------- lecture d'image en base64 (compressée) ---------- */
 function pickImage(maxW = 800) {
