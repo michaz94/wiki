@@ -268,13 +268,8 @@ function screenSearch() {
   input.oninput = () => {
     const f = input.value.trim();
     if (!f) { res.innerHTML = '<div class="empty">Tape un mot : titres et textes sont fouillés.</div>'; return; }
-    const like = '%' + f + '%';
-    const rows = q('SELECT * FROM pages WHERE title LIKE ? OR body LIKE ? ORDER BY updated_at DESC LIMIT 30', [like, like]);
-    res.innerHTML = rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucun résultat pour « ${esc(f)} ».</div>`;
-    wireCards();
-  };
-  setTimeout(() => input.focus(), 60);
-}
+    const needle = normalizeAccents(f);
+    con
 
 /* ---------- templates ---------- */
 function screenTemplates() {
