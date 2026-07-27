@@ -1103,35 +1103,34 @@ function render() {
 
 /* ---------- gestion du bouton retour Android ---------- */
 function setupBackButton() {
-  // On pousse un état initial dans l'historique du navigateur
-  history.pushState({ appDepth: 0 }, '');
+  // On pousse DEUX états : un tampon + l'état actif
+  history.pushState({ page: 'app' }, '');
+  history.pushState({ page: 'app' }, '');
 
   window.addEventListener('popstate', (e) => {
     // Si un overlay (confirm, picker, popup, drawer) est ouvert, on le ferme
     const overlay = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
     if (overlay) {
       overlay.remove();
-      history.pushState({ appDepth: stack.length }, '');
+      history.pushState({ page: 'app' }, '');
       return;
     }
     // Si on n'est pas sur l'accueil, on recule dans l'app
     if (stack.length > 1) {
-      // Si on est en édition, on sauvegarde d'abord ? Non, on laisse l'utilisateur gérer.
       if (editor) { editor.destroy(); editor = null; }
       stack.pop();
       render();
-      history.pushState({ appDepth: stack.length }, '');
+      history.pushState({ page: 'app' }, '');
     } else {
-      // On est sur l'accueil : on laisse le comportement natif (fermer l'app)
-      // Mais on re-pousse un état pour éviter de sortir accidentellement
-      history.pushState({ appDepth: 0 }, '');
-      // Petit toast pour prévenir
+      // On est sur l'accueil : demande confirmation avant de quitter
       if (!window._backWarned) {
         toast('Appuie encore pour quitter');
         window._backWarned = true;
         setTimeout(() => { window._backWarned = false; }, 2000);
+        history.pushState({ page: 'app' }, '');
       } else {
         // 2ème pression rapide : on quitte vraiment
+        window._backWarned = false;
         history.back();
       }
     }
