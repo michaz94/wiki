@@ -703,9 +703,10 @@ textarea.field{resize:vertical;min-height:70px}
   padding: 4px 0;
 }
 
-/* Cases grises plus compactes type Fandom */
+/* Cases grises type Fandom — largeur fixe + titre coupé */
 .rcard {
   flex: 0 0 200px !important;
+  width: 200px !important;
   max-width: 72vw;
   padding: 8px !important;
   border-radius: 6px !important;
@@ -716,10 +717,15 @@ textarea.field{resize:vertical;min-height:70px}
   color: inherit;
   text-align: left;
   cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  align-self: flex-start !important;
 }
 .rcard-img {
   aspect-ratio: 1 / 1 !important;
   width: 100% !important;
+  flex-shrink: 0 !important;
   border-radius: 3px !important;
   overflow: hidden;
   background: var(--neutral-400, #2c2c2c) !important;
@@ -736,13 +742,24 @@ textarea.field{resize:vertical;min-height:70px}
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  width: 100%;
   padding: 0 2px 2px;
+  box-sizing: border-box;
 }
+/* titre : max 2 lignes, pas d'agrandissement infini */
 .rcard-t {
   font-size: 15px !important;
   font-weight: 500 !important;
   line-height: 1.25 !important;
   margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-height: calc(1.25em * 2);
+  max-width: 100%;
 }
 .rcard-m {
   display: flex !important;
@@ -751,12 +768,14 @@ textarea.field{resize:vertical;min-height:70px}
   font-size: 12px !important;
   color: var(--muted, #787777) !important;
   min-width: 0;
+  max-width: 100%;
 }
 .rcard-m > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}.rcard-wiki-ico {
+}
+.rcard-wiki-ico {
   width: 16px;
   height: 16px;
   border-radius: 50%;
