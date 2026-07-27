@@ -176,7 +176,9 @@ function screenHome() {
     <header class="top brand">
       <button class="menu-btn" id="openMenu"><span></span><span></span><span></span></button>
       ${logoHTML()}
-      <div class="searchbar" id="search">${lensHTML()}<span>Rechercher…</span></div>
+      <div class="header-actions">
+        <button type="button" class="search-icon-btn" id="search" aria-label="Rechercher"></button>
+      </div>
     </header>
     <main>
       <div class="sec"><span class="sec-name">Re-plongez-vous</span><button class="sec-more" id="viewAllRecent">VOIR TOUT</button></div>
