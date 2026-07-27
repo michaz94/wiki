@@ -57,12 +57,12 @@ button{font-family:inherit}
 /* ============ HEADER ============ */
 .top{position:sticky;top:0;z-index:10;background:linear-gradient(90deg,#4a0080,#9b59b6);
   display:flex;align-items:center;gap:12px;
-  padding: 8px 16px 8px}
+  padding: 8px 14px 8px}
 .top h1{font-size:22px;margin:0;flex:1;font-weight:700;letter-spacing:-.01em}
 .top .title{flex:1;font-size:18px;font-weight:500;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.top.brand{padding:8px 14px 8px}
+.top.brand{padding: 5px 14px 5px}
 
 .icon-btn{background:none;border:none;color:var(--accent);
   font-size:22px;padding:8px;cursor:pointer;line-height:1}
