@@ -1,10 +1,11 @@
+/* ============ Wiki PWA — vanilla ES6 ============ */
 import { Editor, Node, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
 
 let db, editor = null, pickerListener = null;
 let stack = [{ name: 'home' }];
 const app = document.getElementById('app');
-const COLORS = ['#f5c518','#ff6b6b','#4ecdc4','#a78bfa','#6bcb77','#ff9f43','#54a0ff','#f368e0'];
+const COLORS = ['#ffc500','#ff6b6b','#4ecdc4','#a78bfa','#6bcb77','#ff9f43','#54a0ff','#f368e0'];
 
 /* ---------- nœud wikilink ---------- */
 const Wikilink = Node.create({
@@ -13,10 +14,7 @@ const Wikilink = Node.create({
   inline: true,
   atom: true,
   addAttributes() {
-    return {
-      id: { default: null },
-      label: { default: '' }
-    };
+    return { id: { default: null }, label: { default: '' } };
   },
   parseHTML() {
     return [{
@@ -26,14 +24,14 @@ const Wikilink = Node.create({
   },
   renderHTML({ node }) {
     return ['a', mergeAttributes({
-      'data-wikilink': node.attrs.id,
-      class: 'wikilink'
+      'data-wikilink': node.attrs.id, class: 'wikilink'
     }), node.attrs.label || 'Page'];
   }
 });
 
 /* ---------- base de données ---------- */
 async function initDB() {
+  if (typeof initSqlJs === 'undefined') throw new Error('sql.js non chargé');
   const SQL = await initSqlJs({
     locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/' + f
   });
@@ -56,6 +54,9 @@ async function initDB() {
   if (!cols.includes('space_id')) db.run('ALTER TABLE pages ADD COLUMN space_id TEXT');
   if (!cols.includes('template_id')) db.run('ALTER TABLE pages ADD COLUMN template_id TEXT');
   if (!cols.includes('infobox')) db.run('ALTER TABLE pages ADD COLUMN infobox TEXT');
+  if (!cols.includes('cover')) db.run('ALTER TABLE pages ADD COLUMN cover TEXT');
+  const scols = q('PRAGMA table_info(spaces)').map(c => c.name);
+  if (!scols.includes('image')) db.run('ALTER TABLE spaces ADD COLUMN image TEXT');
   try { await navigator.storage.persist(); } catch (e) {}
   await saveDB();
 }
@@ -68,12 +69,10 @@ async function saveDB() {
   await w.close();
 }
 function q(sql, params = []) {
-  const s = db.prepare(sql);
-  s.bind(params);
+  const s = db.prepare(sql); s.bind(params);
   const out = [];
   while (s.step()) out.push(s.getAsObject());
-  s.free();
-  return out;
+  s.free(); return out;
 }
 function run(sql, params = []) { db.run(sql, params); }
 function getPage(id) { return q('SELECT * FROM pages WHERE id=?', [id])[0]; }
@@ -84,12 +83,71 @@ function getTemplate(id) { return q('SELECT * FROM templates WHERE id=?', [id])[
 const esc = s => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const strip = h => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 const fmt = ts => new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtLong = ts => new Date(ts).toLocaleString('fr-FR', {
+  day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+});
 const uid = () => crypto.randomUUID();
+
+/* ---------- lecture d'image en base64 (compressée) ---------- */
+function pickImage(maxW = 800) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files?.[0];
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    };
+    inp.click();
+  });
+}
 
 /* ---------- navigation ---------- */
 function go(name, param) { stack.push({ name, param }); render(); }
 function back() { stack.pop(); if (!stack.length) stack = [{ name: 'home' }]; render(); }
 function replaceCur(name, param) { stack.pop(); stack.push({ name, param }); render(); }
+
+/* ---------- compteur global ---------- */
+function getStats() {
+  const pages = q('SELECT COUNT(*) c FROM pages')[0].c;
+  const spaces = q('SELECT COUNT(*) c FROM spaces')[0].c;
+  const templates = q('SELECT COUNT(*) c FROM templates')[0].c;
+  return { pages, spaces, templates };
+}
+
+/* ---------- logo Wiki stylisé ---------- */
+function logoHTML() {
+  return `<span class="logo"><span class="w">W</span>iki</span>`;
+}
+function lensHTML() { return `<span class="lens"></span>`; }
+function trashIcon() {
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14"
+          stroke="#fa005a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10 11v6M14 11v6" stroke="#fa005a" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+}
+function editIcon() {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#ffc500" stroke-width="2" stroke-linecap="round"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#ffc500" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
 
 /* ---------- accueil portail ---------- */
 function screenHome() {
@@ -99,29 +157,18 @@ function screenHome() {
   app.innerHTML = `
     <header class="top brand">
       <button class="menu-btn" id="openMenu"><span></span><span></span><span></span></button>
-      <span class="logo">Fandom</span>
-      <div class="searchbar" id="search"><span>🔍</span><span>Rechercher…</span></div>
+      ${logoHTML()}
+      <div class="searchbar" id="search">${lensHTML()}<span>Rechercher…</span></div>
     </header>
     <main>
-      <div class="sec"><span class="sec-ico">🕘</span>Re-plongez-vous</div>
+      <div class="sec"><span class="sec-name">Re-plongez-vous</span><button class="sec-more" id="viewAllRecent">VOIR TOUT</button></div>
       <div class="hscroll">
-        ${recents.map(p => {
-          const sp = p.space_id ? getSpace(p.space_id) : null;
-          const col = sp ? sp.color : '#f5c518';
-          const ini = (p.title?.trim() || 'S')[0].toUpperCase();
-          return `<div class="rcard" data-id="${p.id}">
-            <div class="rcard-img" style="background:linear-gradient(135deg, ${col}33, ${col}0d)">
-              <span class="rcard-ini" style="color:${col}">${esc(ini)}</span>
-            </div>
-            <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
-            <div class="rcard-m">${sp ? esc(sp.emoji + ' ' + sp.name) : '📥 Inbox'}</div>
-          </div>`;
-        }).join('') || '<div class="empty">Rien pour le moment. Le + jaune capture une idée.</div>'}
+        ${recents.map(p => rcardHTML(p)).join('') || '<div class="empty">Rien pour le moment. Le + jaune capture une idée.</div>'}
       </div>
-      <div class="sec"><span class="sec-ico">📚</span>Mes espaces</div>
+      <div class="sec"><span class="sec-name">Mes espaces</span></div>
       <div class="hscroll avatars">
         ${spaces.map(s => `<div class="avatar" data-sid="${s.id}">
-          <div class="av-c" style="background:${s.color}">${esc(s.emoji || '📁')}</div>
+          <div class="av-c" style="background:${s.color}${s.image ? `;background-image:url('${s.image}');background-size:cover;background-position:center` : ''}">${s.image ? '' : esc(s.emoji || '📁')}</div>
           <div class="av-n">${esc(s.name)}</div>
         </div>`).join('')}
         <div class="avatar" id="newSpace">
@@ -145,9 +192,30 @@ function screenHome() {
   document.getElementById('toInbox').onclick = () => go('inbox');
   document.getElementById('toTpl').onclick = () => go('templates');
   document.getElementById('newSpace').onclick = () => go('newspace');
-  document.getElementById('fab').onclick = () => quickNote(null);
+  const fab = document.getElementById('fab');
+  fab.onclick = () => quickNote(null);
+  fab.oncontextmenu = e => { e.preventDefault(); openFabMenu(null); };
+  attachLongPress(fab, () => openFabMenu(null));
   app.querySelectorAll('[data-sid]').forEach(c => c.onclick = () => go('space', c.dataset.sid));
   app.querySelectorAll('.rcard').forEach(c => c.onclick = () => go('read', c.dataset.id));
+  const viewAll = document.getElementById('viewAllRecent');
+  if (viewAll) viewAll.onclick = () => go('inbox');
+}
+
+/* ---------- carte "Re-plongez-vous" (avec image de cover si présente) ---------- */
+function rcardHTML(p) {
+  const sp = p.space_id ? getSpace(p.space_id) : null;
+  const col = sp ? sp.color : '#ffc500';
+  const hasImage = p.cover && p.cover.length > 10;
+  const bg = hasImage
+    ? `background-image:url('${p.cover}');background-size:cover;background-position:center`
+    : `background:linear-gradient(135deg, ${col}33, ${col}0d)`;
+  const spImg = sp?.image ? `<img class="rcard-sp-img" src="${sp.image}">` : (sp ? `<span style="color:${sp.color}">${esc(sp.emoji || '')}</span>` : '📥');
+  return `<div class="rcard" data-id="${p.id}">
+    <div class="rcard-img" style="${bg}"></div>
+    <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
+    <div class="rcard-m">${spImg} ${sp ? esc(sp.name) : 'Inbox'}</div>
+  </div>`;
 }
 
 /* ---------- recherche ---------- */
@@ -254,9 +322,9 @@ function screenTemplate(id) {
     </header>
     <main>
       <button class="btn-accent quick" id="np">+ Nouvelle page</button>
-      <div class="sec"><span class="sec-ico">🧾</span>CHAMPS</div>
+      <div class="sec"><span class="sec-name">CHAMPS</span></div>
       ${fields.map(f => `<div class="card row"><div class="grow"><div class="t">${esc(f.label)}</div><div class="meta">${f.type === 'long' ? 'Texte long' : 'Texte'}</div></div></div>`).join('') || '<div class="empty">Aucun champ.</div>'}
-      <div class="sec"><span class="sec-ico">📄</span>PAGES</div>
+      <div class="sec"><span class="sec-name">PAGES</span></div>
       ${pages.map(p => cardHTML(p)).join('') || '<div class="empty">Aucune page avec ce template.</div>'}
     </main>`;
   document.getElementById('bk').onclick = back;
@@ -270,28 +338,40 @@ function screenTemplate(id) {
   wireCards();
 }
 
-/* ---------- espace ---------- */
+/* ---------- espace (avec bouton édition) ---------- */
 function screenSpace(id) {
   const s = getSpace(id);
   if (!s) { back(); return; }
   const rows = q('SELECT * FROM pages WHERE space_id=? ORDER BY updated_at DESC', [id]);
+  const headerImg = s.image
+    ? `<img class="space-hero" src="${s.image}">`
+    : `<div class="space-hero placeholder" style="background:${s.color}">${esc(s.emoji || '📁')}</div>`;
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <div class="title">${esc(s.emoji || '')} ${esc(s.name)}</div>
+      <button class="icon-btn" id="editSpace" title="Modifier">${editIcon()}</button>
     </header>
     <main>
+      <div class="space-header">
+        ${headerImg}
+      </div>
       ${rows.length ? rows.map(p => cardHTML(p)).join('') : `<div class="empty">Aucune page dans cet espace.<br>Le + jaune en crée une ici.</div>`}
     </main>
     <button class="fab" id="fab" style="background:${s.color}">+</button>`;
   document.getElementById('bk').onclick = back;
-  document.getElementById('fab').onclick = () => quickNote(id);
+  document.getElementById('editSpace').onclick = () => go('editspace', id);
+  const fab = document.getElementById('fab');
+  fab.onclick = () => quickNote(id);
+  fab.oncontextmenu = e => { e.preventDefault(); openFabMenu(id); };
+  attachLongPress(fab, () => openFabMenu(id));
   wireCards();
 }
 
-/* ---------- nouvel espace (aperçu live) ---------- */
+/* ---------- nouvel espace (avec image) ---------- */
 function screenNewSpace() {
   let color = COLORS[0];
+  let image = null;
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -302,8 +382,13 @@ function screenNewSpace() {
         <div class="av-c av-big" id="pv" style="background:${color}">📕</div>
         <div class="ns-pv-name" id="pvn">Ton espace</div>
       </div>
-      <div class="lab">EMOJI</div>
-      <input class="field" id="emo" maxlength="4" value="📕">
+      <div class="lab">IMAGE (optionnelle)</div>
+      <div class="img-picker">
+        <button class="btn-accent" id="pickImg">📷 Choisir une image</button>
+        <button class="btn-ghost" id="rmImg" style="display:none">Retirer</button>
+      </div>
+      <div class="lab">EMOJI (si pas d'image)</div>
+      <input class="field" id="emo" maxlength="4" value="">
       <div class="lab">NOM</div>
       <input class="field" id="nm" placeholder="Roman, projet, univers…">
       <div class="lab">COULEUR</div>
@@ -314,9 +399,25 @@ function screenNewSpace() {
   const pvn = document.getElementById('pvn');
   const emo = document.getElementById('emo');
   const nm = document.getElementById('nm');
-  const upd = () => { pv.style.background = color; pv.textContent = emo.value.trim() || '📁'; pvn.textContent = nm.value.trim() || 'Ton espace'; };
+  const rmImg = document.getElementById('rmImg');
+  const upd = () => {
+    if (image) {
+      pv.style.background = `url('${image}') center/cover`;
+      pv.textContent = '';
+    } else {
+      pv.style.background = color;
+      pv.textContent = emo.value.trim() || '📁';
+    }
+    pvn.textContent = nm.value.trim() || 'Ton espace';
+    rmImg.style.display = image ? 'inline-block' : 'none';
+  };
   emo.oninput = upd; nm.oninput = upd;
   document.getElementById('bk').onclick = back;
+  document.getElementById('pickImg').onclick = async () => {
+    const img = await pickImage(400);
+    if (img) { image = img; upd(); }
+  };
+  rmImg.onclick = () => { image = null; upd(); };
   document.getElementById('sw').querySelectorAll('.sw').forEach(el => el.onclick = () => {
     color = el.dataset.c;
     document.querySelectorAll('#sw .sw').forEach(x => x.classList.toggle('sel', x === el));
@@ -325,12 +426,109 @@ function screenNewSpace() {
   document.getElementById('go').onclick = async () => {
     const name = nm.value.trim();
     if (!name) return;
-    const emoji = emo.value.trim() || '📁';
+    const emoji = emo.value.trim() || '';
     const id = uid();
-    run('INSERT INTO spaces (id,name,emoji,color,created_at) VALUES (?,?,?,?,?)', [id, name, emoji, color, Date.now()]);
+    run('INSERT INTO spaces (id,name,emoji,color,created_at,image) VALUES (?,?,?,?,?,?)',
+      [id, name, emoji, color, Date.now(), image]);
     await saveDB();
     replaceCur('space', id);
   };
+}
+
+/* ---------- édition d'un espace ---------- */
+function screenEditSpace(id) {
+  const s = getSpace(id);
+  if (!s) { back(); return; }
+  let color = s.color;
+  let image = s.image || null;
+  app.innerHTML = `
+    <header class="top">
+      <button class="icon-btn" id="bk">←</button>
+      <h1>Modifier l'espace</h1>
+    </header>
+    <main>
+      <div class="ns-preview">
+        <div class="av-c av-big" id="pv" style="background:${image ? `url('${image}') center/cover` : color}">${image ? '' : esc(s.emoji || '📁')}</div>
+        <div class="ns-pv-name" id="pvn">${esc(s.name)}</div>
+      </div>
+      <div class="lab">IMAGE</div>
+      <div class="img-picker">
+        <button class="btn-accent" id="pickImg">📷 Changer l'image</button>
+        <button class="btn-ghost" id="rmImg" style="${image ? '' : 'display:none'}">Retirer</button>
+      </div>
+      <div class="lab">EMOJI (si pas d'image)</div>
+      <input class="field" id="emo" maxlength="4" value="${esc(s.emoji || '')}">
+      <div class="lab">NOM</div>
+      <input class="field" id="nm" value="${esc(s.name)}">
+      <div class="lab">COULEUR</div>
+      <div class="swatches" id="sw">${COLORS.map(c => `<div class="sw${c === color ? ' sel' : ''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+      <button class="btn-accent quick" id="go">Enregistrer</button>
+      <button class="btn-danger quick" id="del">Supprimer cet espace</button>
+    </main>`;
+  const pv = document.getElementById('pv');
+  const pvn = document.getElementById('pvn');
+  const emo = document.getElementById('emo');
+  const nm = document.getElementById('nm');
+  const rmImg = document.getElementById('rmImg');
+  const upd = () => {
+    if (image) {
+      pv.style.background = `url('${image}') center/cover`;
+      pv.textContent = '';
+    } else {
+      pv.style.background = color;
+      pv.textContent = emo.value.trim() || '📁';
+    }
+    pvn.textContent = nm.value.trim() || 'Ton espace';
+    rmImg.style.display = image ? 'inline-block' : 'none';
+  };
+  emo.oninput = upd; nm.oninput = upd;
+  document.getElementById('bk').onclick = back;
+  document.getElementById('pickImg').onclick = async () => {
+    const img = await pickImage(400);
+    if (img) { image = img; upd(); }
+  };
+  rmImg.onclick = () => { image = null; upd(); };
+  document.getElementById('sw').querySelectorAll('.sw').forEach(el => el.onclick = () => {
+    color = el.dataset.c;
+    document.querySelectorAll('#sw .sw').forEach(x => x.classList.toggle('sel', x === el));
+    upd();
+  });
+  document.getElementById('go').onclick = async () => {
+    const name = nm.value.trim();
+    if (!name) return;
+    run('UPDATE spaces SET name=?, emoji=?, color=?, image=? WHERE id=?',
+      [name, emo.value.trim() || '', color, image, id]);
+    await saveDB();
+    back();
+  };
+  document.getElementById('del').onclick = () => confirmDeleteSpace(id);
+}
+
+function confirmDeleteSpace(id) {
+  const s = getSpace(id);
+  const nb = q('SELECT COUNT(*) c FROM pages WHERE space_id=?', [id])[0].c;
+  const ov = document.createElement('div');
+  ov.className = 'confirm-overlay';
+  ov.innerHTML = `
+    <div class="confirm-box">
+      <h3>Supprimer « ${esc(s.name)} » ?</h3>
+      <p>${nb} page${nb > 1 ? 's' : ''} sera${nb > 1 ? 'ont' : ''} déplacée${nb > 1 ? 's' : ''} vers l'Inbox. L'espace sera supprimé définitivement.</p>
+      <div class="confirm-actions">
+        <button class="cancel">Annuler</button>
+        <button class="danger">Supprimer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('.cancel').onclick = () => ov.remove();
+  ov.querySelector('.danger').onclick = async () => {
+    run('UPDATE pages SET space_id=NULL, is_inbox=1 WHERE space_id=?', [id]);
+    run('DELETE FROM spaces WHERE id=?', [id]);
+    await saveDB();
+    ov.remove();
+    stack = [{ name: 'home' }];
+    render();
+  };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
 }
 
 /* ---------- classer ---------- */
@@ -350,7 +548,7 @@ function screenClasser(id) {
         ${!p.space_id ? '<span class="badge">✓</span>' : ''}
       </div>
       ${spaces.map(s => `<div class="card row pick" data-pick="${s.id}" style="border-left:4px solid ${s.color}">
-        <div class="emo" style="background:${s.color}26">${esc(s.emoji || '📁')}</div>
+        <div class="emo" style="background:${s.color}26${s.image ? `;background-image:url('${s.image}');background-size:cover;background-position:center` : ''}">${s.image ? '' : esc(s.emoji || '📁')}</div>
         <div class="grow"><div class="t">${esc(s.name)}</div></div>
         ${p.space_id === s.id ? '<span class="badge">✓</span>' : ''}
       </div>`).join('')}
@@ -377,11 +575,14 @@ function screenInbox() {
     </main>
     <button class="fab" id="fab">+</button>`;
   document.getElementById('bk').onclick = back;
-  document.getElementById('fab').onclick = () => quickNote(null);
+  const fab = document.getElementById('fab');
+  fab.onclick = () => quickNote(null);
+  fab.oncontextmenu = e => { e.preventDefault(); openFabMenu(null); };
+  attachLongPress(fab, () => openFabMenu(null));
   wireCards();
 }
 
-/* ---------- cartes ---------- */
+/* ---------- cartes classiques ---------- */
 function cardHTML(p) {
   const title = p.title?.trim() || 'Sans titre';
   const prev = strip(p.body).slice(0, 120);
@@ -409,24 +610,37 @@ function screenRead(id) {
   const ibRows = tpl ? JSON.parse(tpl.fields || '[]').filter(f => (info[f.key] || '').trim()) : [];
   const bl = q('SELECT id,title,body,created_at,updated_at,is_inbox,space_id FROM pages WHERE id<>? AND body LIKE ?',
     [id, '%data-wikilink="' + id + '"%']);
+  const created = fmtLong(p.created_at);
+  const updated = fmtLong(p.updated_at);
+  const cover = p.cover
+    ? `<div class="page-cover" style="background-image:url('${p.cover}')"></div>`
+    : '';
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <div class="title">${esc(p.title?.trim() || 'Sans titre')}</div>
-      <button class="icon-btn" id="dup">⧉</button>
+      <button class="icon-btn" id="dup" title="Dupliquer">⧉</button>
+      <button class="btn-trash" id="del" title="Supprimer">${trashIcon()}</button>
       <button class="btn-ghost" id="ed">Modifier</button>
     </header>
+    ${cover}
+    <div class="read-meta">
+      <span>📅 Créée le ${created}</span>
+      <span class="dot">•</span>
+      <span>✏️ Modifiée le ${updated}</span>
+    </div>
     <article class="read">
       <button class="chip" id="chip">${chip}</button>
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
       ${ibRows.length ? `<div class="infobox"><div class="ib-head">${esc(tpl.emoji || '')} ${esc(tpl.name)}</div>${ibRows.map(f => `<div class="ib-row"><div class="ib-k">${esc(f.label)}</div><div class="ib-v">${esc(info[f.key])}</div></div>`).join('')}</div>` : ''}
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
-      ${bl.length ? `<div class="sec"><span class="sec-ico">🔗</span>LIENS ENTRANTS</div>${bl.map(x => cardHTML(x)).join('')}` : ''}
+      ${bl.length ? `<div class="sec"><span class="sec-name">🔗 LIENS ENTRANTS</span></div>${bl.map(x => cardHTML(x)).join('')}` : ''}
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
   document.getElementById('chip').onclick = () => go('classer', id);
   document.getElementById('dup').onclick = () => duplicatePage(id);
+  document.getElementById('del').onclick = () => confirmDelete(id);
   app.querySelector('.body').querySelectorAll('a[data-wikilink]').forEach(a => {
     const pid = a.getAttribute('data-wikilink');
     const t = getPage(pid);
@@ -437,19 +651,54 @@ function screenRead(id) {
   wireCards();
 }
 
-/* ---------- édition ---------- */
+function confirmDelete(id) {
+  const p = getPage(id);
+  if (!p) return;
+  const ov = document.createElement('div');
+  ov.className = 'confirm-overlay';
+  ov.innerHTML = `
+    <div class="confirm-box">
+      <h3>Supprimer « ${esc(p.title?.trim() || 'Sans titre')} » ?</h3>
+      <p>Cette action est irréversible.</p>
+      <div class="confirm-actions">
+        <button class="cancel">Annuler</button>
+        <button class="danger">Supprimer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('.cancel').onclick = () => ov.remove();
+  ov.querySelector('.danger').onclick = async () => {
+    run('DELETE FROM pages WHERE id=?', [id]);
+    await saveDB();
+    ov.remove();
+    back();
+  };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+}
+
+/* ---------- édition (avec ajout d'image de couverture) ---------- */
 function screenEdit(id) {
   const p = getPage(id);
   if (!p) { back(); return; }
   const tpl = p.template_id ? getTemplate(p.template_id) : null;
   const fields = tpl ? JSON.parse(tpl.fields || '[]') : [];
   let info = {}; try { info = JSON.parse(p.infobox || '{}'); } catch (e) {}
+  let cover = p.cover || null;
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <div class="title">Édition</div>
       <button class="btn-accent" id="save">Enregistrer</button>
     </header>
+    <div class="cover-picker">
+      <div class="cover-preview" id="coverPreview" style="${cover ? `background-image:url('${cover}')` : ''}">
+        ${!cover ? '<span>📷 Ajouter une image de couverture</span>' : ''}
+      </div>
+      <div class="cover-actions">
+        <button class="btn-ghost" id="pickCover">${cover ? 'Changer' : 'Ajouter'} l'image</button>
+        ${cover ? '<button class="btn-ghost danger" id="rmCover">Retirer</button>' : ''}
+      </div>
+    </div>
     <input class="title-input" id="ttl" placeholder="Titre" value="${esc(p.title)}">
     ${fields.length ? `<div class="ib-form">${fields.map(f => `
       <div class="lab">${esc(f.label)}</div>
@@ -460,6 +709,31 @@ function screenEdit(id) {
     <div class="editor-wrap"><div id="ed"></div></div>
     <div class="toolbar" id="tb"></div>`;
   document.getElementById('bk').onclick = back;
+
+  const bindCoverActions = () => {
+    const pickBtn = document.getElementById('pickCover');
+    const rmBtn = document.getElementById('rmCover');
+    if (pickBtn) pickBtn.onclick = async () => {
+      const img = await pickImage(1200);
+      if (img) {
+        cover = img;
+        refreshCover();
+      }
+    };
+    if (rmBtn) rmBtn.onclick = () => { cover = null; refreshCover(); };
+  };
+  const refreshCover = () => {
+    const cp = document.getElementById('coverPreview');
+    cp.style.backgroundImage = cover ? `url('${cover}')` : '';
+    cp.innerHTML = cover ? '' : '<span>📷 Ajouter une image de couverture</span>';
+    const actions = document.querySelector('.cover-actions');
+    actions.innerHTML = `
+      <button class="btn-ghost" id="pickCover">${cover ? 'Changer' : 'Ajouter'} l'image</button>
+      ${cover ? '<button class="btn-ghost danger" id="rmCover">Retirer</button>' : ''}`;
+    bindCoverActions();
+  };
+  bindCoverActions();
+
   document.getElementById('save').onclick = async () => {
     const title = document.getElementById('ttl').value;
     const body = editor.getHTML();
@@ -469,8 +743,8 @@ function screenEdit(id) {
         if (el) info[f.key] = el.value;
       });
     }
-    run('UPDATE pages SET title=?, body=?, updated_at=?, infobox=? WHERE id=?',
-      [title, body, Date.now(), JSON.stringify(info), id]);
+    run('UPDATE pages SET title=?, body=?, updated_at=?, infobox=?, cover=? WHERE id=?',
+      [title, body, Date.now(), JSON.stringify(info), cover, id]);
     await saveDB();
     editor.destroy(); editor = null;
     replaceCur('read', id);
@@ -478,10 +752,7 @@ function screenEdit(id) {
   editor = new Editor({
     element: document.getElementById('ed'),
     content: p.body || '',
-    extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
-      Wikilink
-    ],
+    extensions: [StarterKit.configure({ heading: { levels: [2, 3, 4] } }), Wikilink],
     onUpdate: () => updateTb()
   });
   pickerListener = () => openPicker(insertWikilink);
@@ -495,8 +766,8 @@ async function duplicatePage(id) {
   const p = getPage(id);
   if (!p) return;
   const nid = uid(), now = Date.now();
-  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox) VALUES (?,?,?,?,?,?,?,?,?)',
-    [nid, (p.title || 'Sans titre') + ' (copie)', p.body || '', now, now, p.is_inbox, p.space_id, p.template_id, p.infobox || '{}']);
+  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox,cover) VALUES (?,?,?,?,?,?,?,?,?,?)',
+    [nid, (p.title || 'Sans titre') + ' (copie)', p.body || '', now, now, p.is_inbox, p.space_id, p.template_id, p.infobox || '{}', p.cover || null]);
   await saveDB();
   go('read', nid);
 }
@@ -594,11 +865,58 @@ function updateTb() {
   });
 }
 
-/* ---------- capture ---------- */
+/* ---------- capture rapide ---------- */
 async function quickNote(spaceId) {
   const id = uid(), now = Date.now();
   run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id) VALUES (?,?,?,?,?,?,?)',
     [id, '', '', now, now, spaceId ? 0 : 1, spaceId]);
+  await saveDB();
+  go('edit', id);
+}
+
+/* ---------- FAB long-press ---------- */
+function attachLongPress(el, onLong) {
+  let timer = null;
+  const start = () => { timer = setTimeout(onLong, 600); };
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  el.addEventListener('touchstart', start, { passive: true });
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchcancel', cancel);
+  el.addEventListener('touchmove', cancel);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+}
+
+function openFabMenu(spaceId) {
+  const templates = q('SELECT * FROM templates ORDER BY created_at');
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+  overlay.innerHTML = `<div class="popup" role="menu">
+    <button class="popup-item" data-act="blank">
+      <span class="pico">+</span>
+      <span>Page blanche <small style="color:var(--muted);margin-left:6px">rapide</small></span>
+    </button>
+    ${templates.length ? '<div style="padding:6px 16px;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.1em">DEPUIS UN TEMPLATE</div>' : ''}
+    ${templates.map(t => `<button class="popup-item" data-tid="${t.id}">
+      <span class="pico hot">${esc(t.emoji || '🧩')}</span>
+      <span>${esc(t.name)}</span>
+    </button>`).join('')}
+  </div>`;
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) overlay.remove(); };
+  overlay.onclick = e => { if (e.target === overlay) close(); };
+  overlay.querySelector('[data-act="blank"]').onclick = () => { close(); quickNote(spaceId); };
+  overlay.querySelectorAll('[data-tid]').forEach(btn => btn.onclick = () => {
+    const tid = btn.dataset.tid;
+    close();
+    createFromTemplate(tid, spaceId);
+  });
+}
+async function createFromTemplate(tid, spaceId) {
+  const id = uid(), now = Date.now();
+  run('INSERT INTO pages (id,title,body,created_at,updated_at,is_inbox,space_id,template_id,infobox) VALUES (?,?,?,?,?,?,?,?,?)',
+    [id, '', '', now, now, spaceId ? 0 : 1, spaceId, tid, '{}']);
   await saveDB();
   go('edit', id);
 }
@@ -615,28 +933,28 @@ function toggleTheme() {
   localStorage.setItem('theme', next);
 }
 
-/* ---------- drawer (menu latéral) ---------- */
+/* ---------- drawer (sans import/export) ---------- */
 function openDrawer() {
   const isLight = (document.documentElement.dataset.theme || 'dark') === 'light';
+  const stats = getStats();
   const dr = document.createElement('div');
   dr.className = 'drawer-overlay';
   dr.innerHTML = `
     <aside class="drawer" onclick="event.stopPropagation()">
       <div class="drawer-head">
-        <span class="logo">Fandom</span>
+        ${logoHTML()}
         <button class="icon-btn" id="drClose">✕</button>
+      </div>
+      <div class="drawer-stats">
+        <span><strong>${stats.pages}</strong> pages</span>
+        <span><strong>${stats.spaces}</strong> espaces</span>
+        <span><strong>${stats.templates}</strong> templates</span>
       </div>
       <nav class="drawer-nav">
         <button class="dr-item" data-act="home"><span class="dr-ico">⌂</span>Accueil</button>
-        <button class="dr-item" data-act="saved"><span class="dr-ico">✚</span>Enregistré</button>
-        <button class="dr-item" data-act="progress"><span class="dr-ico">✓</span>Suivi de la progression</button>
+        <button class="dr-item" data-act="inbox"><span class="dr-ico">📥</span>Inbox</button>
+        <button class="dr-item" data-act="templates"><span class="dr-ico">🧩</span>Templates</button>
         <button class="dr-item" data-act="history"><span class="dr-ico">⏱</span>Historique</button>
-        <button class="dr-item" data-act="tools"><span class="dr-ico">▦</span>Utilitaires</button>
-      </nav>
-      <div class="drawer-sep"></div>
-      <nav class="drawer-nav">
-        <button class="dr-item small">Parcourir les wikis</button>
-        <button class="dr-item small">Centre des communautés</button>
       </nav>
       <div class="drawer-sep"></div>
       <button class="dr-item" id="drTheme">
@@ -648,13 +966,15 @@ function openDrawer() {
   requestAnimationFrame(() => dr.classList.add('open'));
   const close = () => { dr.classList.remove('open'); setTimeout(() => dr.remove(), 260); };
   dr.onclick = close;
-  dr.querySelector('#drClose').onclick = close;
+  dr.querySelector('#drClose').onclick = e => { e.stopPropagation(); close(); };
   dr.querySelector('#drTheme').onclick = e => { e.stopPropagation(); toggleTheme(); close(); };
   dr.querySelectorAll('.dr-item[data-act]').forEach(b => b.onclick = e => {
     e.stopPropagation();
     const a = b.dataset.act;
     close();
     if (a === 'home') { stack = [{ name: 'home' }]; render(); }
+    else if (a === 'inbox') go('inbox');
+    else if (a === 'templates') go('templates');
     else if (a === 'history') go('inbox');
   });
 }
@@ -670,6 +990,7 @@ function render() {
   else if (cur.name === 'edit') screenEdit(cur.param);
   else if (cur.name === 'space') screenSpace(cur.param);
   else if (cur.name === 'newspace') screenNewSpace();
+  else if (cur.name === 'editspace') screenEditSpace(cur.param);
   else if (cur.name === 'classer') screenClasser(cur.param);
   else if (cur.name === 'templates') screenTemplates();
   else if (cur.name === 'newtemplate') screenNewTemplate();
