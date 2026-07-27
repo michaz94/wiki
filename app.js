@@ -1144,6 +1144,7 @@ loadTheme();
 try {
   await initDB();
   render();
+  setupBackButton();
 } catch (e) {
   app.innerHTML = `<div class="empty">Erreur : ${esc(String(e))}</div>`;
 }
