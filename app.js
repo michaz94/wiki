@@ -118,7 +118,7 @@ function pickImage(maxW = 800) {
 }
 
 /* ---------- navigation ---------- */
-function go(name, param) { stack.push({ name, param }); render(); }
+function go(name, param) { window._backWarned = false; stack.push({ name, param }); render(); }
 function back() { stack.pop(); if (!stack.length) stack = [{ name: 'home' }]; render(); }
 function replaceCur(name, param) { stack.pop(); stack.push({ name, param }); render(); }
 
