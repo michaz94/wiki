@@ -642,3 +642,142 @@ textarea.field{resize:vertical;min-height:70px}
 }
 .toast.show{opacity:1;transform:translate(-50%, 0)}
 .toast.err{background:var(--accent-hot);color:#fff}
+
+/* ===== LOOK FANDOM (header + cartes + drawer) — ajout ===== */
+
+.top.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: var(--accent, #ffc500);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
+}
+
+.sec-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 16px 12px;
+}
+.sec-row .sec {
+  margin: 0 !important;
+  flex: 1;
+}
+.sec-link {
+  border: none;
+  background: none;
+  color: var(--accent, #ffc500);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+}
+
+/* Cases grises plus compactes type Fandom */
+.rcard {
+  flex: 0 0 172px !important;
+  max-width: 72vw;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background: var(--neutral-300, #191919) !important;
+  gap: 10px !important;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rcard-img {
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+  background: var(--neutral-400, #2c2c2c) !important;
+  position: relative;
+}
+.rcard-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rcard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 2px 2px;
+}
+.rcard-t {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+}
+.rcard-m {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  color: var(--muted, #787777) !important;
+  min-width: 0;
+}
+.rcard-m > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rcard-wiki-ico {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: inline-block;
+  background: #5a5a5a;
+}
+
+/* Menu gauche : icônes dans un rond */
+.dr-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 14px 18px !important;
+  font-size: 17px !important;
+}
+.dr-ico {
+  width: 36px !important;
+  height: 36px !important;
+  flex: 0 0 36px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid var(--neutral-600, #504f4f) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  background: transparent !important;
+}
+.dr-item.small .dr-ico {
+  display: none !important;
+}
