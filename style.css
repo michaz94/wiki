@@ -148,12 +148,15 @@ main{flex:1;padding:8px 0 120px}
   aspect-ratio:1/1;width:100%;
   border-radius:3px;
   position:relative;overflow:hidden;
-  background:var(--neutral-400) !important;
+  background-color:var(--neutral-400);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
   display:flex;align-items:center;justify-content:center
 }
 
 /* Flamme Fandom watermark (couleur gris) */
-.rcard-img::before{
+.rcard-img:not(.has-cover)::before{
   content:"";position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
   width:42%;height:48%;
@@ -163,7 +166,7 @@ main{flex:1;padding:8px 0 120px}
 }
 
 /* Badge "note" en bas-gauche (icône page 18x18) */
-.rcard-img::after{
+.rcard-img:not(.has-cover)::after{
   content:"";
   position:absolute;left:6px;bottom:6px;
   width:18px;height:18px;
