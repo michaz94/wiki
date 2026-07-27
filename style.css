@@ -625,3 +625,24 @@ textarea.field{resize:vertical;min-height:70px}
   padding:6px;cursor:pointer;
   display:inline-flex;align-items:center
 }
+/* ============ TOAST (messages) ============ */
+.toast{
+  position:fixed;
+  left:50%;bottom:90px;
+  transform:translate(-50%, 20px);
+  background:var(--neutral-400);
+  color:var(--text);
+  padding:12px 20px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:500;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+  opacity:0;
+  transition:opacity .25s ease, transform .25s ease;
+  z-index:9999;
+  max-width:80%;
+  text-align:center;
+  pointer-events:none
+}
+.toast.show{opacity:1;transform:translate(-50%, 0)}
+.toast.err{background:var(--accent-hot);color:#fff}
