@@ -2,23 +2,23 @@
 :root, [data-theme="dark"]{
   /* Couleurs neutres officielles Fandom (dark) */
   --neutral-0:    #000;
-  --neutral-100:  #0a0e27;
+  --neutral-100:  #0a0e27;   /* --bg = FOND DE L'APP → BLEU NUIT */
   --neutral-200:  #121318;
-  --neutral-300:  #191919;
-  --neutral-400:  #2c2c2c;
+  --neutral-300:  #8b0000;   /* --surface = CARTES → ROUGE FONCÉ */
+  --neutral-400:  #006400;   /* --surface2 = THUMBNAILS → VERT FONCÉ */
   --neutral-500:  #3d3d3c;
   --neutral-600:  #504f4f;
-  --neutral-700:  #787777;
+  --neutral-700:  #ff69b4;   /* --muted = TEXTE GRIS/DATES → ROSE FLASHY */
   --neutral-800:  #b5b5b4;
-  --neutral-900:  #e0e0e0;
+  --neutral-900:  #00ffff;   /* --text = TEXTE PRINCIPAL → CYAN */
   --neutral-1000: #fff;
 
   /* Alias pour ton app */
-  --bg:      var(--neutral-100);   /* gris sombre doux (Fandom) */
-  --surface: var(--neutral-300);   /* fond des cartes */
-  --surface2:var(--neutral-400);   /* thumbnails */
-  --accent:  #ffc500;              /* jaune Fandom officiel */
-  --accent-hot: #fa005a;           /* rose flamme Fandom */
+  --bg:      var(--neutral-100);
+  --surface: var(--neutral-300);
+  --surface2:var(--neutral-400);
+  --accent:  #ff8c00;              /* JAUNE → ORANGE VIF */
+  --accent-hot: #fa005a;
   --text:    var(--neutral-900);
   --muted:   var(--neutral-700);
   --line:    var(--neutral-400);
