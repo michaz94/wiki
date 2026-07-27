@@ -366,46 +366,50 @@ textarea.field{resize:vertical;min-height:70px}
 .drawer-overlay.open{background:rgba(0,0,0,.55)}
 .drawer{
   position:absolute;left:0;top:0;bottom:0;
-  width:min(88vw, 360px);
+  width:min(78vw, 300px);   /* était 88vw / 360px — moins large */
   background:var(--bg);
   border-right:1px solid var(--line);
   transform:translateX(-100%);
   transition:transform .26s cubic-bezier(.2,.8,.2,1);
   display:flex;flex-direction:column;
-  padding:12px 0 16px;
+  padding:10px 0 14px;       /* un peu moins d'air */
   overflow-y:auto;
-  padding-top:calc(12px + env(safe-area-inset-top))
+  padding-top:calc(10px + env(safe-area-inset-top))
 }
 .drawer-overlay.open .drawer{transform:translateX(0)}
 .drawer-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:8px 20px 18px
+  padding:8px 16px 12px      /* était 8px 20px 18px */
 }
-.drawer-head .logo{font-size:26px;font-weight:900;letter-spacing:-.5px}
+.drawer-head .logo{font-size:22px;font-weight:900;letter-spacing:-.5px} /* était 26px */
 .drawer-head .icon-btn{color:var(--text);font-size:22px}
 
-.drawer-nav{display:flex;flex-direction:column;padding:0 6px}
+.drawer-nav{display:flex;flex-direction:column;padding:0 4px}
 .dr-item{
-  display:flex;align-items:center;gap:18px;
+  display:flex;align-items:center;gap:12px;   /* était 18px */
   background:none;border:none;color:var(--text);
-  padding:16px 18px;
-  font-size:17px;font-weight:500;
+  padding:11px 14px;                          /* était 16px 18px */
+  font-size:15px;font-weight:500;             /* était 17px */
   cursor:pointer;text-align:left;
-  border-radius:6px;font-family:inherit
+  border-radius:0;                            /* plus plat, style Fandom */
+  font-family:inherit
 }
 .dr-item:active{background:var(--surface)}
-.dr-item.small{font-size:15px;font-weight:400;padding:14px 22px}
+.dr-item.small{font-size:14px;font-weight:400;padding:10px 16px;color:var(--muted)}
+/* icônes : plus petites, SANS cercle, en COULEUR (pas de filter gris) */
 .dr-ico{
-  width:28px;height:28px;display:inline-flex;align-items:center;
-  justify-content:center;font-size:16px;color:var(--text);
-  border:1.5px solid var(--text);border-radius:50%;flex:0 0 28px
+  width:22px;height:22px;display:inline-flex;align-items:center;
+  justify-content:center;font-size:18px;color:var(--text);
+  border:none;border-radius:0;flex:0 0 22px;
+  background:transparent
 }
-.dr-item.small .dr-ico{display:none}
+.dr-item.small .dr-ico{display:inline-flex} /* affiche aussi l'icône thème si tu en as une */
 
 .drawer-sep{
   height:1px;background:var(--line);
-  margin:14px 22px
+  margin:8px 16px              /* était 14px 22px */
 }
+
 /* ============ AJUSTEMENTS FOND & TAILLES ============ */
 
 /* Cartes Re-plongez-vous plus petites */
@@ -769,78 +773,6 @@ textarea.field{resize:vertical;min-height:70px}
   font-size: 10px;
 }
 
-/* ===== DRAWER — style Fandom (remplace les anciens correctifs drawer du bas) ===== */
-
-.drawer {
-  width: min(78vw, 300px) !important;
-}
-
-.drawer-head {
-  padding: 10px 16px 12px !important;
-}
-.drawer-head .logo {
-  font-size: 22px !important;
-}
-
-.drawer-stats {
-  padding: 0 16px 10px !important;
-  font-size: 12px !important;
-  gap: 10px !important;
-  color: var(--muted) !important;
-}
-
-.drawer-nav {
-  padding: 0 4px !important;
-}
-
-/* lignes du menu : moins larges, moins d'espace */
-.dr-item {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 11px 14px !important;
-  font-size: 15px !important;
-  font-weight: 500 !important;
-  border-radius: 0 !important;
-}
-
-/* icônes : petites, SANS gros cercle (comme Fandom officiel) */
-.dr-ico {
-  width: 22px !important;
-  height: 22px !important;
-  flex: 0 0 22px !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 18px !important;
-  filter: grayscale(1) brightness(1.35);
-}
-
-.drawer-sep {
-  margin: 8px 16px !important;
-}
-
-/* bas : thème, etc. */
-.dr-item.small {
-  padding: 10px 16px !important;
-  font-size: 14px !important;
-  font-weight: 400 !important;
-  color: var(--muted) !important;
-}
-.dr-item.small .dr-ico {
-  display: inline-flex !important;
-  width: 20px !important;
-  height: 20px !important;
-  flex: 0 0 20px !important;
-  border: none !important;
-  font-size: 16px !important;
-  filter: grayscale(1) brightness(1.35);
-}
-
-
 /* mini logo carte : emoji visible sans image */
 .rcard-wiki-ico--emoji {
   display: inline-flex !important;
@@ -851,6 +783,6 @@ textarea.field{resize:vertical;min-height:70px}
   background: var(--surface2, #2c2c2c);
 }
 .rcard-wiki-ico--inbox {
-  background: #3d3d3c !important;
+  background: #3d3d3c;
   font-size: 10px;
 }
