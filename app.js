@@ -1147,7 +1147,6 @@ function setupBackButton() {
     }
   });
 }
-
 /* ---------- démarrage ---------- */
 app.innerHTML = '<div class="empty">Chargement…</div>';
 loadTheme();
