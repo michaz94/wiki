@@ -2,7 +2,7 @@
 :root, [data-theme="dark"]{
   /* Couleurs neutres officielles Fandom (dark) */
   --neutral-0:    #000;
-  --neutral-100:  #0a0e27;   /* --bg = FOND DE L'APP → BLEU NUIT */
+  --neutral-100:  #ffc500;   /* --bg = FOND DE L'APP → BLEU NUIT */
   --neutral-200:  #121318;
   --neutral-300:  #8b0000;   /* --surface = CARTES → ROUGE FONCÉ */
   --neutral-400:  #006400;   /* --surface2 = THUMBNAILS → VERT FONCÉ */
