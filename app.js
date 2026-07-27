@@ -1030,7 +1030,7 @@ function toggleTheme() {
   localStorage.setItem('theme', next);
 }
 
-/* ---------- drawer (sans import/export) ---------- */
+/* ---------- drawer ---------- */
 function openDrawer() {
   const isLight = (document.documentElement.dataset.theme || 'dark') === 'light';
   const stats = getStats();
@@ -1052,7 +1052,10 @@ function openDrawer() {
         <button class="dr-item" data-act="inbox"><span class="dr-ico">📥</span>Inbox</button>
         <button class="dr-item" data-act="templates"><span class="dr-ico">🧩</span>Templates</button>
         <button class="dr-item" data-act="history"><span class="dr-ico">⏱</span>Historique</button>
-      </nav>
+            </nav>
+      <div class="drawer-sep"></div>
+      <button class="dr-item" id="drExport"><span class="dr-ico">💾</span>Exporter mes données</button>
+      <button class="dr-item" id="drImport"><span class="dr-ico">📂</span>Importer une sauvegarde</button>
       <div class="drawer-sep"></div>
       <button class="dr-item" id="drTheme">
         <span class="dr-ico">${isLight ? '☾' : '☀'}</span>
@@ -1065,6 +1068,8 @@ function openDrawer() {
   dr.onclick = close;
   dr.querySelector('#drClose').onclick = e => { e.stopPropagation(); close(); };
   dr.querySelector('#drTheme').onclick = e => { e.stopPropagation(); toggleTheme(); close(); };
+  dr.querySelector('#drExport').onclick = e => { e.stopPropagation(); close(); exportDB(); };
+  dr.querySelector('#drImport').onclick = e => { e.stopPropagation(); close(); importDB(); };
   dr.querySelectorAll('.dr-item[data-act]').forEach(b => b.onclick = e => {
     e.stopPropagation();
     const a = b.dataset.act;
