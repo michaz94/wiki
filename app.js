@@ -1103,25 +1103,35 @@ function render() {
 
 /* ---------- gestion du bouton retour Android ---------- */
 function setupBackButton() {
-  // On pousse un état tampon
+  // On pousse des états tampons
   history.pushState({ page: 'app' }, '');
   history.pushState({ page: 'app' }, '');
 
+  let lastBackTime = 0;
+
   window.addEventListener('popstate', (e) => {
-    // Si un overlay (confirm, picker, popup, drawer) est ouvert, on le ferme
+    const now = Date.now();
+    // Anti-rafale : ignore si moins de 350ms depuis le dernier retour
+    if (now - lastBackTime < 350) {
+      history.pushState({ page: 'app' }, '');
+      return;
+    }
+    lastBackTime = now;
+
+    // Si un overlay est ouvert, on le ferme
     const overlay = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
     if (overlay) {
       overlay.remove();
       history.pushState({ page: 'app' }, '');
       return;
     }
+
     // Si on n'est pas sur l'accueil, on recule dans l'app
     if (stack.length > 1) {
       if (editor) { editor.destroy(); editor = null; }
       stack.pop();
       render();
       history.pushState({ page: 'app' }, '');
-      // Important : on remet à zéro l'avertissement, pour ne pas quitter par erreur
       window._backWarned = false;
     } else {
       // On est sur l'accueil : demande confirmation avant de quitter
@@ -1131,7 +1141,6 @@ function setupBackButton() {
         setTimeout(() => { window._backWarned = false; }, 2000);
         history.pushState({ page: 'app' }, '');
       } else {
-        // 2ème pression rapide sur l'accueil : on quitte
         window._backWarned = false;
         history.back();
       }
