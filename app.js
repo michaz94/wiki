@@ -181,7 +181,10 @@ function screenHome() {
       </div>
     </header>
     <main>
-      <div class="sec"><span class="sec-name">Re-plongez-vous</span><button class="sec-more" id="viewAllRecent">VOIR TOUT</button></div>
+      <div class="sec-row">
+        <div class="sec">Re-plongez-vous</div>
+        <button type="button" class="sec-link" id="viewAllRecent">Voir tout</button>
+      </div>
       <div class="hscroll">
         ${recents.map(p => rcardHTML(p)).join('') || '<div class="empty">Rien pour le moment. Le + jaune capture une idée.</div>'}
       </div>
