@@ -55,15 +55,22 @@ button{font-family:inherit}
 #app{min-height:100vh;display:flex;flex-direction:column}
 
 /* ============ HEADER ============ */
-.top{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-items:center;gap:12px;padding:14px 16px 12px}
+.top{position:sticky;top:0;z-index:10;background:var(--bg);
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px 12px}
 .top h1{font-size:22px;margin:0;flex:1;font-weight:700;letter-spacing:-.01em}
-.top .title{flex:1;font-size:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top.brand{padding:12px 14px 10px;gap:10px}
-.header-actions{margin-left:auto;display:flex;align-items:center;gap:4px}
-.search-icon-btn{width:40px;height:40px;border:none;cursor:pointer;padding:0;background:var(--accent,#ffc500);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat}
-.icon-btn{background:none;border:none;color:var(--accent);font-size:22px;padding:8px;cursor:pointer;line-height:1}
-.btn-accent{background:var(--accent);color:#291927;border:none;font-weight:600;border-radius:3px;padding:9px 18px;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.15px}
-.btn-ghost{background:none;color:var(--accent);border:none;font-weight:600;font-size:12px;padding:8px 6px;cursor:pointer;text-transform:uppercase}
+.top .title{flex:1;font-size:18px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.top.brand{padding:16px 16px 14px}
+
+.icon-btn{background:none;border:none;color:var(--accent);
+  font-size:22px;padding:8px;cursor:pointer;line-height:1}
+.btn-accent{background:var(--accent);color:#291927;border:none;
+  font-weight:600;border-radius:3px;padding:9px 18px;
+  font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.15px}
+.btn-ghost{background:none;color:var(--accent);border:none;
+  font-weight:600;font-size:12px;padding:8px 6px;cursor:pointer;text-transform:uppercase}
 
 /* ============ LOGO "Wiki" stylisé ============ */
 .logo{
@@ -119,7 +126,6 @@ main{flex:1;padding:8px 0 120px}
   padding:2px 16px 10px;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .hscroll::-webkit-scrollbar{display:none}
-
 
 /* Carte extérieure : fond neutral-300 (#191919) avec padding 9px et radius 6px */
 .rcard{
@@ -201,242 +207,6 @@ main{flex:1;padding:8px 0 120px}
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap
-}
-
-/* Cases grises type Fandom — largeur fixe + titre coupé */
-.rcard {
-  flex: 0 0 200px !important;
-  width: 200px !important;
-  max-width: 72vw;
-  padding: 8px !important;
-  border-radius: 6px !important;
-  border: none !important;
-  background: var(--neutral-300, #191919) !important;
-  gap: 10px !important;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  display: flex !important;
-  flex-direction: column !important;
-  box-sizing: border-box !important;
-  align-self: flex-start !important;
-}
-.rcard-img {
-  aspect-ratio: 1 / 1 !important;
-  width: 100% !important;
-  flex-shrink: 0 !important;
-  border-radius: 3px !important;
-  overflow: hidden;
-  background: var(--neutral-400, #2c2c2c) !important;
-  position: relative;
-}
-.rcard-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.rcard-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  width: 100%;
-  padding: 0 2px 2px;
-  box-sizing: border-box;
-}
-/* titre : max 2 lignes, pas d'agrandissement infini */
-.rcard-t {
-  font-size: 15px !important;
-  font-weight: 500 !important;
-  line-height: 1.25 !important;
-  margin: 0 !important;
-  display: -webkit-box !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-line-clamp: 2 !important;
-  overflow: hidden !important;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  min-height: calc(1.25em * 2);
-  max-width: 100%;
-}
-.rcard-m {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  font-size: 12px !important;
-  color: var(--muted, #787777) !important;
-  min-width: 0;
-/* ============ RE-PLONGEZ-VOUS ============ */
-.sec-row{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:12px;
-  margin:20px 16px 12px;
-}
-.sec-row .sec{
-  margin:0;
-  flex:1;
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:-.01em;
-  color:var(--text);
-}
-.sec-link{
-  border:none;
-  background:none;
-  color:var(--accent,#ffc500);
-  font-size:12px;
-  font-weight:800;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  cursor:pointer;
-  font-family:inherit;
-  padding:4px 0;
-}
-.hscroll{
-  display:flex;
-  gap:12px;
-  overflow-x:auto;
-  align-items:flex-start;
-  padding:2px 16px 10px;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-}
-.hscroll::-webkit-scrollbar{
-  display:none;
-}
-.rcard{
-  flex:0 0 200px;
-  width:200px;
-  max-width:72vw;
-  background:var(--neutral-300,#191919);
-  padding:8px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  font:inherit;
-  color:inherit;
-  text-align:left;
-  box-sizing:border-box;
-  align-self:flex-start;
-}
-.rcard:hover{
-  background:var(--neutral-500);
-}
-.rcard:active{opacity:.9}
-.rcard-img{
-  aspect-ratio:1/1;
-  width:100%;
-  flex-shrink:0;
-  border-radius:3px;
-  position:relative;
-  overflow:hidden;
-  background:var(--neutral-400,#2c2c2c);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.rcard-img img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-/* flamme si pas de cover */
-.rcard-img:not(.has-cover)::before{
-  content:"";
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:42%;
-  height:48%;
-  background:var(--neutral-500);
-  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'><path d='M50 5 C 28 32, 12 52, 18 82 C 24 108, 46 116, 50 116 C 54 116, 76 108, 82 82 C 88 52, 72 32, 50 5 Z M50 55 L60 70 L50 82 L40 70 Z'/></svg>") center/contain no-repeat;
-  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'><path d='M50 5 C 28 32, 12 52, 18 82 C 24 108, 46 116, 50 116 C 54 116, 76 108, 82 82 C 88 52, 72 32, 50 5 Z M50 55 L60 70 L50 82 L40 70 Z'/></svg>") center/contain no-repeat;
-}
-/* badge page bas-gauche */
-.rcard-img:not(.has-cover)::after{
-  content:"";
-  position:absolute;
-  left:6px;
-  bottom:6px;
-  width:18px;
-  height:18px;
-  border-radius:3px;
-  z-index:2;
-  background:var(--neutral-0,#000);
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 26' fill='none'><path d='M5 3 h11 l4 4 v16 a1 1 0 0 1 -1 1 h-14 a1 1 0 0 1 -1 -1 v-19 a1 1 0 0 1 1 -1 z' stroke='%23ffc500' stroke-width='1.8' fill='none'/><path d='M16 3 v4 h4' stroke='%23ffc500' stroke-width='1.8' fill='none'/></svg>");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:65%;
-}
-.rcard-ini{display:none}
-.rcard-body{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  min-width:0;
-  width:100%;
-  padding:0 2px 2px;
-  box-sizing:border-box;
-}
-.rcard-t{
-  font-weight:500;
-  font-size:15px;
-  line-height:1.25;
-  letter-spacing:-.01em;
-  color:var(--neutral-900);
-  margin:0;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
-  overflow-wrap:anywhere;
-  word-break:break-word;
-  min-height:calc(1.25em * 2);
-  max-width:100%;
-}
-.rcard-m{
-  color:var(--muted,#787777);
-  font-size:12px;
-  font-weight:400;
-  line-height:1.5;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  min-width:0;
-  max-width:100%;
-  overflow:hidden;
-}
-.rcard-m>span:last-child{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.rcard-wiki-ico{
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  object-fit:cover;
-  flex-shrink:0;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  background:#5a5a5a;
-  font-size:11px;
-  line-height:1;
-}
-.rcard-wiki-ico--emoji{font-size:11px}
-.rcard-wiki-ico--inbox{
-  background:#3d3d3c;
-  font-size:10px;
 }
 
 /* ============ AVATARS RONDS ============ */
@@ -882,3 +652,161 @@ textarea.field{resize:vertical;min-height:70px}
 .toast.show{opacity:1;transform:translate(-50%, 0)}
 .toast.err{background:var(--accent-hot);color:#fff}
 
+/* ===== LOOK FANDOM (header + cartes + drawer) — ajout ===== */
+
+.top.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.search-icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  background: var(--accent, #ffc500);
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
+}
+
+.sec-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 16px 12px;
+}
+.sec-row .sec {
+  margin: 0 !important;
+  flex: 1;
+}
+.sec-link {
+  border: none;
+  background: none;
+  color: var(--accent, #ffc500);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 0;
+}
+
+/* Cases grises type Fandom — largeur fixe + titre coupé */
+.rcard {
+  flex: 0 0 200px !important;
+  width: 200px !important;
+  max-width: 72vw;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background: var(--neutral-300, #191919) !important;
+  gap: 10px !important;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  align-self: flex-start !important;
+}
+.rcard-img {
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+  background: var(--neutral-400, #2c2c2c) !important;
+  position: relative;
+}
+.rcard-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.rcard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  padding: 0 2px 2px;
+  box-sizing: border-box;
+}
+/* titre : max 2 lignes, pas d'agrandissement infini */
+.rcard-t {
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-height: calc(1.25em * 2);
+  max-width: 100%;
+}
+.rcard-m {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  color: var(--muted, #787777) !important;
+  min-width: 0;
+  max-width: 100%;
+}
+.rcard-m > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rcard-wiki-ico {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #5a5a5a;
+  font-size: 11px;
+  line-height: 1;
+}
+.rcard-wiki-ico--emoji {
+  /* pastille colorée + emoji : le fond vient souvent du style="" dans le HTML */
+  font-size: 11px;
+}
+.rcard-wiki-ico--inbox {
+  background: #3d3d3c;
+  font-size: 10px;
+}
+
+/* mini logo carte : emoji visible sans image */
+.rcard-wiki-ico--emoji {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  background: var(--surface2, #2c2c2c);
+}
+.rcard-wiki-ico--inbox {
+  background: #3d3d3c;
+  font-size: 10px;
+}
