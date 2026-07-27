@@ -1103,48 +1103,41 @@ function render() {
 
 /* ---------- gestion du bouton retour Android ---------- */
 function setupBackButton() {
-  // On pousse des états tampons
-  history.pushState({ page: 'app' }, '');
-  history.pushState({ page: 'app' }, '');
+  history.replaceState({ wiki: 1 }, '');
+  history.pushState({ wiki: 1 }, '');
 
-  let lastBackTime = 0;
+  let exiting = false;
 
-  window.addEventListener('popstate', (e) => {
-    const now = Date.now();
-    // Anti-rafale : ignore si moins de 350ms depuis le dernier retour
-    if (now - lastBackTime < 350) {
-      history.pushState({ page: 'app' }, '');
-      return;
-    }
-    lastBackTime = now;
+  window.addEventListener('popstate', () => {
+    if (exiting) return;
 
-    // Si un overlay est ouvert, on le ferme
-    const overlay = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
-    if (overlay) {
-      overlay.remove();
-      history.pushState({ page: 'app' }, '');
-      return;
-    }
+    // 1) Un overlay ouvert ? → le fermer, rester dans l'app
+    const ov = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
+    if (ov) { ov.remove(); history.pushState({ wiki: 1 }, ''); return; }
 
-    // Si on n'est pas sur l'accueil, on recule dans l'app
+    // 2) Écran interne ? → reculer dans l'app
     if (stack.length > 1) {
       if (editor) { editor.destroy(); editor = null; }
       stack.pop();
       render();
-      history.pushState({ page: 'app' }, '');
       window._backWarned = false;
-    } else {
-      // On est sur l'accueil : demande confirmation avant de quitter
-      if (!window._backWarned) {
-        toast('Appuie encore pour quitter');
-        window._backWarned = true;
-        setTimeout(() => { window._backWarned = false; }, 2000);
-        history.pushState({ page: 'app' }, '');
-      } else {
-        window._backWarned = false;
-        history.back();
-      }
+      history.pushState({ wiki: 1 }, '');
+      return;
     }
+
+    // 3) Accueil : 1er appui = avertir, 2e = quitter
+    if (!window._backWarned) {
+      window._backWarned = true;
+      toast('Appuie encore pour quitter');
+      setTimeout(() => { window._backWarned = false; }, 2000);
+      history.pushState({ wiki: 1 }, '');
+      return;
+    }
+
+    // 4) Sortie volontaire
+    window._backWarned = false;
+    exiting = true;
+    history.go(-2);
   });
 }
 /* ---------- démarrage ---------- */
