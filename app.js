@@ -231,13 +231,18 @@ function rcardHTML(p) {
   const title = p.title?.trim() || 'Sans titre';
   const hasCover = p.cover && p.cover.length > 10;
   const img = hasCover ? `<img src="${p.cover}" alt="">` : '';
-  let ico;
+    let ico;
   if (sp && sp.image) {
     ico = `<img class="rcard-wiki-ico" src="${sp.image}" alt="">`;
   } else if (sp) {
-    ico = `<span class="rcard-wiki-ico" style="background:${sp.color}"></span>`;
+    const em = (sp.emoji || '').trim();
+    if (em) {
+      ico = `<span class="rcard-wiki-ico rcard-wiki-ico--emoji" style="background:${sp.color}">${esc(em)}</span>`;
+    } else {
+      ico = `<span class="rcard-wiki-ico" style="background:${sp.color}"></span>`;
+    }
   } else {
-    ico = `<span class="rcard-wiki-ico"></span>`;
+    ico = `<span class="rcard-wiki-ico rcard-wiki-ico--emoji rcard-wiki-ico--inbox">📥</span>`;
   }
   const label = sp ? sp.name : 'Inbox';
   return `<button type="button" class="rcard" data-id="${p.id}">
