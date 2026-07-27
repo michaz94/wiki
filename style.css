@@ -410,6 +410,20 @@ textarea.field{resize:vertical;min-height:70px}
   margin:8px 16px              /* était 14px 22px */
 }
 
+/* ============ DRAWER STATS ============ */
+.drawer-stats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  padding:0 16px 10px;
+  font-size:12px;
+  color:var(--muted);
+}
+.drawer-stats strong{
+  color:var(--text);
+  margin-right:4px;
+}
+
 /* ============ AJUSTEMENTS FOND & TAILLES ============ */
 
 /* Cartes Re-plongez-vous plus petites */
@@ -609,15 +623,6 @@ textarea.field{resize:vertical;min-height:70px}
           mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/contain no-repeat;
   display:inline-block
 }
-
-/* ============ DRAWER STATS ============ */
-.drawer-stats{
-  display:flex;gap:14px;
-  padding:8px 22px 14px;
-  color:var(--muted);
-  font-size:13px
-}
-.drawer-stats strong{color:var(--text);margin-right:4px}
 
 /* ============ BOUTON CORBEILLE ============ */
 .btn-trash{
