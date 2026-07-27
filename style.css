@@ -404,3 +404,221 @@ textarea.field{resize:vertical;min-height:70px}
   height:1px;background:var(--line);
   margin:14px 22px
 }
+/* ============ AJUSTEMENTS FOND & TAILLES ============ */
+:root, [data-theme="dark"]{
+  --bg: #161618;   /* gris foncé au lieu de noir pur */
+}
+
+/* Cartes Re-plongez-vous plus petites */
+.rcard{
+  flex:0 0 220px !important;  /* était 260px */
+  padding:8px !important
+}
+.rcard-img{
+  border-radius:8px !important
+}
+.rcard-t{
+  font-size:15px !important;
+  margin-top:8px !important;
+  margin-bottom:4px !important
+}
+.rcard-m{
+  font-size:12px !important;
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+.rcard-sp-img{
+  width:16px;height:16px;
+  border-radius:50%;
+  object-fit:cover;
+  vertical-align:middle
+}
+
+/* ============ COVER IMAGE (édition & lecture) ============ */
+.cover-picker{
+  margin:12px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+.cover-preview{
+  width:100%;
+  aspect-ratio:16/9;
+  background:var(--surface);
+  border:1px dashed var(--line);
+  border-radius:10px;
+  background-size:cover;
+  background-position:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted);
+  font-size:14px
+}
+.cover-actions{
+  display:flex;
+  gap:8px
+}
+.cover-actions .btn-ghost.danger{color:#fa005a}
+
+.page-cover{
+  width:100%;
+  aspect-ratio:16/8;
+  background-size:cover;
+  background-position:center;
+  border-radius:0 0 12px 12px
+}
+
+/* ============ IMAGE PICKER (espaces) ============ */
+.img-picker{
+  display:flex;
+  gap:8px;
+  padding:0 16px;
+  margin-top:6px
+}
+.img-picker .btn-accent,
+.img-picker .btn-ghost{
+  padding:10px 14px;
+  font-size:13px
+}
+
+/* ============ ESPACE : HEADER ============ */
+.space-header{
+  margin:0 16px 16px;
+  border-radius:12px;
+  overflow:hidden
+}
+.space-hero{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  display:block
+}
+.space-hero.placeholder{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:80px
+}
+
+/* ============ BOUTON DANGER ============ */
+.btn-danger{
+  background:#fa005a;
+  color:#fff;
+  border:none;
+  padding:12px 18px;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:12px
+}
+
+/* ============ CONFIRM OVERLAY (déjà là normalement) ============ */
+.confirm-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px
+}
+.confirm-box{
+  background:var(--surface);
+  border-radius:14px;
+  padding:24px;
+  max-width:400px;
+  width:100%
+}
+.confirm-box h3{margin:0 0 8px;font-size:18px}
+.confirm-box p{color:var(--muted);font-size:14px;margin:0 0 20px}
+.confirm-actions{display:flex;gap:10px;justify-content:flex-end}
+.confirm-actions button{
+  padding:10px 18px;border-radius:8px;border:none;
+  font-weight:600;cursor:pointer;font-size:14px
+}
+.confirm-actions .cancel{background:var(--surface2);color:var(--text)}
+.confirm-actions .danger{background:#fa005a;color:#fff}
+
+/* ============ POPUP FAB LONG-PRESS ============ */
+.popup-overlay{
+  position:fixed;inset:0;z-index:150;
+  background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;
+  padding:20px
+}
+.popup{
+  background:var(--surface);
+  border-radius:14px;
+  width:100%;
+  padding:8px;
+  margin-bottom:80px
+}
+.popup-item{
+  display:flex;align-items:center;gap:12px;
+  width:100%;padding:14px;
+  background:none;border:none;color:var(--text);
+  font-size:15px;font-weight:500;cursor:pointer;
+  border-radius:8px;text-align:left
+}
+.popup-item:active{background:var(--surface2)}
+.pico{
+  width:32px;height:32px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--accent);color:#000;
+  border-radius:8px;font-weight:800;font-size:18px
+}
+.pico.hot{background:#fa005a;color:#fff;font-size:16px}
+
+/* ============ READ META (dates) ============ */
+.read-meta{
+  display:flex;flex-wrap:wrap;gap:8px;
+  padding:8px 16px;
+  color:var(--muted);
+  font-size:12px
+}
+.read-meta .dot{opacity:.5}
+
+/* ============ SEC-MORE (bouton VOIR TOUT) ============ */
+.sec{justify-content:space-between}
+.sec-name{flex:1}
+.sec-more{
+  background:none;border:none;
+  color:var(--accent);
+  font-size:12px;font-weight:800;
+  letter-spacing:.08em;
+  cursor:pointer
+}
+
+/* ============ LOGO stylisé ============ */
+.logo{
+  font-family:'Rubik',sans-serif;
+  font-size:26px;font-weight:900;
+  letter-spacing:-.5px;
+  color:var(--text);
+  display:inline-flex;align-items:baseline
+}
+.logo .w{color:var(--accent)}
+
+/* ============ ICÔNE LOUPE ============ */
+.lens{
+  width:20px;height:20px;
+  background:var(--accent);
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/contain no-repeat;
+          mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/contain no-repeat;
+  display:inline-block
+}
+
+/* ============ DRAWER STATS ============ */
+.drawer-stats{
+  display:flex;gap:14px;
+  padding:8px 22px 14px;
+  color:var(--muted);
+  font-size:13px
+}
+.drawer-stats strong{color:var(--text);margin-right:4px}
+
+/* ============ BOUTON CORBEILLE ============ */
+.btn-trash{
+  background:none;border:none;
+  padding:6px;cursor:pointer;
+  display:inline-flex;align-items:center
+}
