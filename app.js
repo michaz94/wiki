@@ -123,6 +123,7 @@ function pickImage(maxW = 800) {
 }
 
 /* ---------- sélection d'image AVEC recadrage/zoom (pour les couvertures) ---------- */
+/* Renvoie { cropped, original } où original = image brute (pour pouvoir recadrer à nouveau plus tard sans repasser par la galerie) */
 function pickImageWithCrop(aspect = 16 / 9, maxOutW = 1200) {
   return new Promise((resolve) => {
     const inp = document.createElement('input');
@@ -134,12 +135,26 @@ function pickImageWithCrop(aspect = 16 / 9, maxOutW = 1200) {
       const reader = new FileReader();
       reader.onload = () => {
         const img = new Image();
-        img.onload = () => openCropper(img, aspect, maxOutW, resolve);
+        img.onload = () => openCropper(img, aspect, maxOutW, (cropped) => {
+          resolve(cropped ? { cropped, original: reader.result } : null);
+        });
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
     };
     inp.click();
+  });
+}
+
+/* Rouvre le recadrage à partir d'une image déjà en mémoire (pas de nouvelle sélection dans la galerie).
+   Renvoie { cropped } directement (l'originale ne change pas, inutile de la renvoyer à nouveau). */
+function recropExistingImage(dataUrl, aspect = 16 / 9, maxOutW = 1200) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => openCropper(img, aspect, maxOutW, (cropped) => {
+      resolve(cropped ? { cropped } : null);
+    });
+    img.src = dataUrl;
   });
 }
 
@@ -877,6 +892,7 @@ function screenEdit(id) {
   const fields = tpl ? JSON.parse(tpl.fields || '[]') : [];
   let info = {}; try { info = JSON.parse(p.infobox || '{}'); } catch (e) {}
   let cover = p.cover || null;
+  let coverOriginal = null; // image brute (non recadrée) gardée en mémoire pour pouvoir recadrer à nouveau sans revenir dans la galerie
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -889,6 +905,7 @@ function screenEdit(id) {
       </div>
       <div class="cover-actions">
         <button class="btn-ghost" id="pickCover">${cover ? 'Changer' : 'Ajouter'} l'image</button>
+        ${cover ? '<button class="btn-ghost" id="recropCover">Recadrer</button>' : ''}
         ${cover ? '<button class="btn-ghost danger" id="rmCover">Retirer</button>' : ''}
       </div>
     </div>
@@ -906,14 +923,27 @@ function screenEdit(id) {
   const bindCoverActions = () => {
     const pickBtn = document.getElementById('pickCover');
     const rmBtn = document.getElementById('rmCover');
+    const recropBtn = document.getElementById('recropCover');
     if (pickBtn) pickBtn.onclick = async () => {
-      const img = await pickImageWithCrop(16 / 9, 1200);
-      if (img) {
-        cover = img;
+      const result = await pickImageWithCrop(16 / 9, 1200);
+      if (result) {
+        cover = result.cropped;
+        coverOriginal = result.original;
         refreshCover();
       }
     };
-    if (rmBtn) rmBtn.onclick = () => { cover = null; refreshCover(); };
+    if (recropBtn) recropBtn.onclick = async () => {
+      // si on a l'image d'origine (choisie dans cette session), on la recadre à nouveau ;
+      // sinon (page rouverte plus tard) on recadre à partir de la couverture déjà enregistrée.
+      const source = coverOriginal || cover;
+      const result = await recropExistingImage(source, 16 / 9, 1200);
+      if (result) {
+        cover = result.cropped;
+        // on garde coverOriginal tel quel : on continue de partir de la meilleure source disponible
+        refreshCover();
+      }
+    };
+    if (rmBtn) rmBtn.onclick = () => { cover = null; coverOriginal = null; refreshCover(); };
   };
   const refreshCover = () => {
     const cp = document.getElementById('coverPreview');
@@ -922,6 +952,7 @@ function screenEdit(id) {
     const actions = document.querySelector('.cover-actions');
     actions.innerHTML = `
       <button class="btn-ghost" id="pickCover">${cover ? 'Changer' : 'Ajouter'} l'image</button>
+      ${cover ? '<button class="btn-ghost" id="recropCover">Recadrer</button>' : ''}
       ${cover ? '<button class="btn-ghost danger" id="rmCover">Retirer</button>' : ''}`;
     bindCoverActions();
   };
