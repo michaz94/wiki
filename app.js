@@ -1119,29 +1119,51 @@ function render() {
   window.scrollTo(0, 0);
 }
 
-/* ---------- navigation ---------- */
-let browserNavId = 1;
+/* ---------- gestion du bouton retour Android ---------- */
+function setupBackButton() {
+  history.replaceState({ page: 'app', navId: 0 }, '');
+  history.pushState({ page: 'app', navId: 1, guard: true }, '');
+  browserNavId = 1;
 
-function go(name, param) {
-  stack.push({ name, param });
-  browserNavId++;
-  history.pushState({ page: 'app', navId: browserNavId }, '');
-  render();
+  window.addEventListener('popstate', () => {
+    // 1) Si un overlay est ouvert, on le ferme d'abord
+    const overlay = document.querySelector('.confirm-overlay, .overlay, .popup-overlay, .drawer-overlay');
+    if (overlay) {
+      overlay.remove();
+      browserNavId++;
+      history.pushState({ page: 'app', navId: browserNavId, guard: stack.length === 1 }, '');
+      return;
+    }
+
+    // 2) Si on n'est pas à l'accueil, on revient dans l'app
+    if (stack.length > 1) {
+      if (editor) {
+        editor.destroy();
+        editor = null;
+      }
+      stack.pop();
+      render();
+      window._backWarned = false;
+      return;
+    }
+
+    // 3) Si on est à l'accueil : double appui pour quitter
+    if (!window._backWarned) {
+      toast('Appuie encore pour quitter');
+      window._backWarned = true;
+      setTimeout(() => { window._backWarned = false; }, 2000);
+
+      browserNavId++;
+      history.pushState({ page: 'app', navId: browserNavId, guard: true }, '');
+      return;
+    }
+
+    // 4) Deuxième appui : on laisse le navigateur / Android quitter
+    window._backWarned = false;
+    history.back();
+  });
 }
 
-function back() {
-  if (stack.length > 1) {
-    history.back(); // le popstate fera le vrai retour
-  }
-}
-
-function replaceCur(name, param) {
-  stack.pop();
-  stack.push({ name, param });
-  history.replaceState({ page: 'app', navId: browserNavId }, '');
-  render();
-}
-}
 /* ---------- démarrage ---------- */
 app.innerHTML = '<div class="empty">Chargement…</div>';
 loadTheme();
