@@ -758,26 +758,73 @@ textarea.field{resize:vertical;min-height:70px}
   background: #5a5a5a;
 }
 
-/* Menu gauche : icônes dans un rond */
+/* ===== DRAWER — style Fandom (remplace les anciens correctifs drawer du bas) ===== */
+
+.drawer {
+  width: min(78vw, 300px) !important;
+}
+
+.drawer-head {
+  padding: 10px 16px 12px !important;
+}
+.drawer-head .logo {
+  font-size: 22px !important;
+}
+
+.drawer-stats {
+  padding: 0 16px 10px !important;
+  font-size: 12px !important;
+  gap: 10px !important;
+  color: var(--muted) !important;
+}
+
+.drawer-nav {
+  padding: 0 4px !important;
+}
+
+/* lignes du menu : moins larges, moins d'espace */
 .dr-item {
   display: flex !important;
   align-items: center !important;
-  gap: 16px !important;
-  padding: 14px 18px !important;
-  font-size: 17px !important;
+  gap: 12px !important;
+  padding: 11px 14px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  border-radius: 0 !important;
 }
+
+/* icônes : petites, SANS gros cercle (comme Fandom officiel) */
 .dr-ico {
-  width: 36px !important;
-  height: 36px !important;
-  flex: 0 0 36px !important;
-  border-radius: 50% !important;
-  border: 1.5px solid var(--neutral-600, #504f4f) !important;
+  width: 22px !important;
+  height: 22px !important;
+  flex: 0 0 22px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 16px !important;
-  background: transparent !important;
+  font-size: 18px !important;
+  filter: grayscale(1) brightness(1.35);
+}
+
+.drawer-sep {
+  margin: 8px 16px !important;
+}
+
+/* bas : thème, etc. */
+.dr-item.small {
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: var(--muted) !important;
 }
 .dr-item.small .dr-ico {
-  display: none !important;
+  display: inline-flex !important;
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 20px !important;
+  border: none !important;
+  font-size: 16px !important;
+  filter: grayscale(1) brightness(1.35);
 }
