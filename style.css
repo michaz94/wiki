@@ -62,7 +62,7 @@ button{font-family:inherit}
 .top .title{flex:1;font-size:18px;font-weight:500;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.top.brand{padding:16px 16px 14px}
+.top.brand{padding:8px 14px 8px}
 
 .icon-btn{background:none;border:none;color:var(--accent);
   font-size:22px;padding:8px;cursor:pointer;line-height:1}
