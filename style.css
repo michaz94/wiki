@@ -11,13 +11,13 @@
   --neutral-700:  #6b5d00;   /* --muted = TEXTE GRIS → BRUN DORÉ */
   --neutral-800:  #3d3400;
   --neutral-900:  #1a1500;   /* --text = TEXTE PRINCIPAL → PRESQUE NOIR */
-  --neutral-1000: #000;
+  --neutral-1000: #fff;
 
   /* Alias pour ton app */
-  --bg:      var(--neutral-100);
+--bg:      var(--neutral-100);
   --surface: var(--neutral-300);
   --surface2:var(--neutral-400);
-  --accent:  #d32f2f;              /* JAUNE → ROUGE (car jaune sur jaune = invisible) */
+  --accent:  #ffc500;
   --accent-hot: #fa005a;
   --text:    var(--neutral-900);
   --muted:   var(--neutral-700);
