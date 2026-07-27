@@ -223,17 +223,25 @@ function screenHome() {
 /* ---------- carte "Re-plongez-vous" (avec image de cover si présente) ---------- */
 function rcardHTML(p) {
   const sp = p.space_id ? getSpace(p.space_id) : null;
-  const col = sp ? sp.color : '#ffc500';
-  const hasImage = p.cover && p.cover.length > 10;
-  const bg = hasImage
-    ? `background-image:url('${p.cover}');background-size:cover;background-position:center`
-    : `background:linear-gradient(135deg, ${col}33, ${col}0d)`;
-  const spImg = sp?.image ? `<img class="rcard-sp-img" src="${sp.image}">` : (sp ? `<span style="color:${sp.color}">${esc(sp.emoji || '')}</span>` : '📥');
-  return `<div class="rcard" data-id="${p.id}">
-    <div class="rcard-img${hasImage ? ' has-cover' : ''}" style="${bg}"></div>
-    <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
-    <div class="rcard-m">${spImg} ${sp ? esc(sp.name) : 'Inbox'}</div>
-  </div>`;
+  const title = p.title?.trim() || 'Sans titre';
+  const hasCover = p.cover && p.cover.length > 10;
+  const img = hasCover ? `<img src="${p.cover}" alt="">` : '';
+  let ico;
+  if (sp && sp.image) {
+    ico = `<img class="rcard-wiki-ico" src="${sp.image}" alt="">`;
+  } else if (sp) {
+    ico = `<span class="rcard-wiki-ico" style="background:${sp.color}"></span>`;
+  } else {
+    ico = `<span class="rcard-wiki-ico"></span>`;
+  }
+  const label = sp ? sp.name : 'Inbox';
+  return `<button type="button" class="rcard" data-id="${p.id}">
+    <div class="rcard-img${hasCover ? ' has-cover' : ''}">${img}</div>
+    <div class="rcard-body">
+      <div class="rcard-t">${esc(title)}</div>
+      <div class="rcard-m">${ico}<span>${esc(label)}</span></div>
+    </div>
+  </button>`;
 }
 
 /* ---------- recherche ---------- */
