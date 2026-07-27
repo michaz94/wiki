@@ -55,22 +55,15 @@ button{font-family:inherit}
 #app{min-height:100vh;display:flex;flex-direction:column}
 
 /* ============ HEADER ============ */
-..top{position:sticky;top:0;z-index:10;background:#ff69b4;
-  display:flex;align-items:center;gap:12px;
-  padding:14px 16px 12px}
+.top{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-items:center;gap:12px;padding:14px 16px 12px}
 .top h1{font-size:22px;margin:0;flex:1;font-weight:700;letter-spacing:-.01em}
-.top .title{flex:1;font-size:18px;font-weight:500;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.top.brand{padding:16px 16px 14px}
-
-.icon-btn{background:none;border:none;color:var(--accent);
-  font-size:22px;padding:8px;cursor:pointer;line-height:1}
-.btn-accent{background:var(--accent);color:#291927;border:none;
-  font-weight:600;border-radius:3px;padding:9px 18px;
-  font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.15px}
-.btn-ghost{background:none;color:var(--accent);border:none;
-  font-weight:600;font-size:12px;padding:8px 6px;cursor:pointer;text-transform:uppercase}
+.top .title{flex:1;font-size:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top.brand{padding:12px 14px 10px;gap:10px}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:4px}
+.search-icon-btn{width:40px;height:40px;border:none;cursor:pointer;padding:0;background:var(--accent,#ffc500);-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat}
+.icon-btn{background:none;border:none;color:var(--accent);font-size:22px;padding:8px;cursor:pointer;line-height:1}
+.btn-accent{background:var(--accent);color:#291927;border:none;font-weight:600;border-radius:3px;padding:9px 18px;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:.15px}
+.btn-ghost{background:none;color:var(--accent);border:none;font-weight:600;font-size:12px;padding:8px 6px;cursor:pointer;text-transform:uppercase}
 
 /* ============ LOGO "Wiki" stylisé ============ */
 .logo{
@@ -761,55 +754,4 @@ textarea.field{resize:vertical;min-height:70px}
 }
 .toast.show{opacity:1;transform:translate(-50%, 0)}
 .toast.err{background:var(--accent-hot);color:#fff}
-
-/* ===== LOOK FANDOM (header + cartes + drawer) — ajout ===== */
-
-.top.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px 10px;
-}
-
-.header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.search-icon-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  background: var(--accent, #ffc500);
-  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
-          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><circle cx='11' cy='11' r='7' stroke='black' stroke-width='2.5'/><path d='M20 20 L16 16' stroke='black' stroke-width='2.5' stroke-linecap='round'/></svg>") center/22px 22px no-repeat;
-}
-
-.sec-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 20px 16px 12px;
-}
-.sec-row .sec {
-  margin: 0 !important;
-  flex: 1;
-}
-.sec-link {
-  border: none;
-  background: none;
-  color: var(--accent, #ffc500);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 4px 0;
-}
 
