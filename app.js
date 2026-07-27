@@ -212,7 +212,7 @@ function rcardHTML(p) {
     : `background:linear-gradient(135deg, ${col}33, ${col}0d)`;
   const spImg = sp?.image ? `<img class="rcard-sp-img" src="${sp.image}">` : (sp ? `<span style="color:${sp.color}">${esc(sp.emoji || '')}</span>` : '📥');
   return `<div class="rcard" data-id="${p.id}">
-    <div class="rcard-img" style="${bg}"></div>
+    <div class="rcard-img${hasImage ? ' has-cover' : ''}" style="${bg}"></div>
     <div class="rcard-t">${esc(p.title?.trim() || 'Sans titre')}</div>
     <div class="rcard-m">${spImg} ${sp ? esc(sp.name) : 'Inbox'}</div>
   </div>`;
