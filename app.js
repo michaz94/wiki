@@ -1,5 +1,6 @@
 /* ============ Wiki PWA — vanilla ES6 ============ */
-import { Editor, Node, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
+import { Editor, Node, Extension, mergeAttributes } from 'https://esm.sh/@tiptap/core@2.11.5';
+import { InputRule } from 'https://esm.sh/@tiptap/core@2.11.5';
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
 
 let db, editor = null, pickerListener = null;
@@ -29,7 +30,25 @@ const Wikilink = Node.create({
   }
 });
 
-/* ---------- base de données ---------- */
+/* ---------- raccourci [[ pour ouvrir le picker de wikilink (façon Obsidian) ---------- */
+const WikilinkShortcut = Extension.create({
+  name: 'wikilinkShortcut',
+  addInputRules() {
+    return [
+      new InputRule({
+        // se déclenche dès que l'utilisateur tape exactement "[["
+        find: /\[\[$/,
+        handler: ({ state, range, commands }) => {
+          // on retire les [[ tapés, ils ne servent qu'à déclencher le picker
+          commands.deleteRange(range);
+          window.dispatchEvent(new CustomEvent('open-wikilink-picker'));
+        }
+      })
+    ];
+  }
+});
+
+
 async function initDB() {
   if (typeof initSqlJs === 'undefined') throw new Error('sql.js non chargé');
   const SQL = await initSqlJs({
@@ -57,7 +76,27 @@ async function initDB() {
   if (!cols.includes('cover')) db.run('ALTER TABLE pages ADD COLUMN cover TEXT');
   const scols = q('PRAGMA table_info(spaces)').map(c => c.name);
   if (!scols.includes('image')) db.run('ALTER TABLE spaces ADD COLUMN image TEXT');
-  try { await navigator.storage.persist(); } catch (e) {}
+
+  // ============ V2 : catégories de projet + accueil de projet ============
+  if (!scols.includes('home_body')) db.run('ALTER TABLE spaces ADD COLUMN home_body TEXT');
+  if (!scols.includes('model')) db.run('ALTER TABLE spaces ADD COLUMN model TEXT');
+
+  // une catégorie = une section d'UN projet (ordre = position)
+  db.run(`CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY, space_id TEXT, name TEXT, intro TEXT,
+    banner TEXT, template_id TEXT, position INTEGER, created_at INTEGER)`);
+
+  // liaison page <-> catégories : une page peut en avoir plusieurs (même projet)
+  db.run(`CREATE TABLE IF NOT EXISTS page_categories (
+    page_id TEXT, category_id TEXT, PRIMARY KEY(page_id, category_id))`);
+
+  // ============ galerie d'images par page ============
+  // une ligne = une image de galerie liée à une page, avec ordre et légende optionnelle
+  db.run(`CREATE TABLE IF NOT EXISTS page_gallery (
+    id TEXT PRIMARY KEY, page_id TEXT, data_url TEXT,
+    caption TEXT, position INTEGER, created_at INTEGER)`);
+
+  try { await navigator.storage.persist() } catch (e) {}
   await saveDB();
 }
 async function saveDB() {
@@ -78,6 +117,53 @@ function run(sql, params = []) { db.run(sql, params); }
 function getPage(id) { return q('SELECT * FROM pages WHERE id=?', [id])[0]; }
 function getSpace(id) { return q('SELECT * FROM spaces WHERE id=?', [id])[0]; }
 function getTemplate(id) { return q('SELECT * FROM templates WHERE id=?', [id])[0]; }
+
+/* ---------- catégories (projets → catégories → pages) ---------- */
+function getCategory(id) { return q('SELECT * FROM categories WHERE id=?', [id])[0]; }
+function getCategories(spaceId) {
+  return q('SELECT * FROM categories WHERE space_id=? ORDER BY position ASC, created_at ASC', [spaceId]);
+}
+function getPageCategories(pageId) {
+  return q(`SELECT c.* FROM categories c
+    JOIN page_categories pc ON pc.category_id = c.id
+    WHERE pc.page_id=? ORDER BY c.position ASC`, [pageId]);
+}
+async function createCategory({ spaceId, name, intro = '', banner = null, templateId = null, position = 0 }) {
+  const id = uid();
+  run('INSERT INTO categories (id,space_id,name,intro,banner,template_id,position,created_at) VALUES (?,?,?,?,?,?,?,?)',
+    [id, spaceId, name, intro, banner, templateId, position, Date.now()]);
+  await saveDB();
+  return id;
+}
+async function setPageCategories(pageId, categoryIds) {
+  run('DELETE FROM page_categories WHERE page_id=?', [pageId]);
+  for (const cid of categoryIds) {
+    run('INSERT OR IGNORE INTO page_categories (page_id,category_id) VALUES (?,?)', [pageId, cid]);
+  }
+  await saveDB();
+}
+
+/* ---------- galerie d'images par page ---------- */
+function getPageGallery(pageId) {
+  return q('SELECT * FROM page_gallery WHERE page_id=? ORDER BY position ASC, created_at ASC', [pageId]);
+}
+async function addGalleryImage(pageId, dataUrl, caption = '') {
+  const id = uid();
+  const maxPos = q('SELECT MAX(position) m FROM page_gallery WHERE page_id=?', [pageId])[0]?.m;
+  const position = (maxPos ?? -1) + 1;
+  run('INSERT INTO page_gallery (id,page_id,data_url,caption,position,created_at) VALUES (?,?,?,?,?,?)',
+    [id, pageId, dataUrl, caption, position, Date.now()]);
+  await saveDB();
+  return id;
+}
+async function removeGalleryImage(imgId) {
+  run('DELETE FROM page_gallery WHERE id=?', [imgId]);
+  await saveDB();
+}
+async function updateGalleryCaption(imgId, caption) {
+  run('UPDATE page_gallery SET caption=? WHERE id=?', [caption, imgId]);
+  await saveDB();
+}
 
 /* ---------- utilitaires ---------- */
 const esc = s => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -823,6 +909,7 @@ function screenRead(id) {
   const cover = p.cover
     ? `<div class="page-cover" style="background-image:url('${p.cover}')"></div>`
     : '';
+  const gallery = getPageGallery(id);
   app.innerHTML = `
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
@@ -843,12 +930,21 @@ function screenRead(id) {
       ${ibRows.length ? `<div class="infobox"><div class="ib-head">${esc(tpl.emoji || '')} ${esc(tpl.name)}</div>${ibRows.map(f => `<div class="ib-row"><div class="ib-k">${esc(f.label)}</div><div class="ib-v">${esc(info[f.key])}</div></div>`).join('')}</div>` : ''}
       <div class="body">${p.body || '<p style="color:var(--muted)">Page vide.</p>'}</div>
       ${bl.length ? `<div class="sec"><span class="sec-name">🔗 LIENS ENTRANTS</span></div>${bl.map(x => cardHTML(x)).join('')}` : ''}
+      <div class="sec"><span class="sec-name">🖼️ GALERIE</span><button class="btn-ghost" id="gal-manage">Gérer</button></div>
+      ${gallery.length
+        ? `<div class="gallery-grid">${gallery.map(g => `
+            <div class="gallery-item">
+              <img src="${g.data_url}" loading="lazy">
+              ${g.caption ? `<div class="gallery-caption">${esc(g.caption)}</div>` : ''}
+            </div>`).join('')}</div>`
+        : `<div class="empty">Aucune image pour le moment.</div>`}
     </article>`;
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
   document.getElementById('chip').onclick = () => go('classer', id);
   document.getElementById('dup').onclick = () => duplicatePage(id);
   document.getElementById('del').onclick = () => confirmDelete(id);
+  document.getElementById('gal-manage').onclick = () => go('gallery', id);
   app.querySelector('.body').querySelectorAll('a[data-wikilink]').forEach(a => {
     const pid = a.getAttribute('data-wikilink');
     const t = getPage(pid);
@@ -857,6 +953,42 @@ function screenRead(id) {
     a.onclick = e => { e.preventDefault(); if (t) go('read', pid); };
   });
   wireCards();
+}
+
+/* ---------- gestion de la galerie d'une page ---------- */
+function screenGallery(pageId) {
+  const p = getPage(pageId);
+  if (!p) { back(); return; }
+  const render = () => {
+    const gallery = getPageGallery(pageId);
+    app.innerHTML = `
+      <header class="top">
+        <button class="icon-btn" id="bk">←</button>
+        <div class="title">Galerie</div>
+        <button class="btn-accent" id="addimg">+ Ajouter</button>
+      </header>
+      ${gallery.length
+        ? `<div class="gallery-manage-list">${gallery.map(g => `
+            <div class="gallery-manage-item" data-id="${g.id}">
+              <img src="${g.data_url}">
+              <input class="field gal-caption" data-id="${g.id}" placeholder="Légende (optionnel)" value="${esc(g.caption || '')}">
+              <button class="btn-ghost danger gal-remove" data-id="${g.id}">Retirer</button>
+            </div>`).join('')}</div>`
+        : `<div class="empty">Aucune image. Appuie sur « + Ajouter » pour commencer.</div>`}
+    `;
+    document.getElementById('bk').onclick = back;
+    document.getElementById('addimg').onclick = async () => {
+      const img = await pickImage(1600);
+      if (img) { await addGalleryImage(pageId, img); render(); }
+    };
+    app.querySelectorAll('.gal-remove').forEach(btn => {
+      btn.onclick = async () => { await removeGalleryImage(btn.dataset.id); render(); };
+    });
+    app.querySelectorAll('.gal-caption').forEach(inp => {
+      inp.onchange = () => updateGalleryCaption(inp.dataset.id, inp.value.trim());
+    });
+  };
+  render();
 }
 
 function confirmDelete(id) {
@@ -976,7 +1108,7 @@ function screenEdit(id) {
   editor = new Editor({
     element: document.getElementById('ed'),
     content: p.body || '',
-    extensions: [StarterKit.configure({ heading: { levels: [2, 3, 4] } }), Wikilink],
+    extensions: [StarterKit.configure({ heading: { levels: [2, 3, 4] } }), Wikilink, WikilinkShortcut],
     onUpdate: () => updateTb()
   });
   pickerListener = () => openPicker(insertWikilink);
@@ -1322,6 +1454,7 @@ function render() {
   else if (cur.name === 'newtemplate') screenNewTemplate();
   else if (cur.name === 'template') screenTemplate(cur.param);
   else if (cur.name === 'search') screenSearch();
+  else if (cur.name === 'gallery') screenGallery(cur.param);
   window.scrollTo(0, 0);
 }
 
