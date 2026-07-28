@@ -208,6 +208,37 @@ function pickImage(maxW = 800) {
   });
 }
 
+function pickMultipleImages(maxW = 1600) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.multiple = true;
+    inp.onchange = () => {
+      const files = Array.from(inp.files || []);
+      if (!files.length) return resolve([]);
+      const processOne = (file) => new Promise((res) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const scale = Math.min(1, maxW / img.width);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            res(canvas.toDataURL('image/jpeg', 0.82));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+      Promise.all(files.map(processOne)).then(resolve);
+    };
+    inp.click();
+  });
+}
 /* ---------- sélection d'image AVEC recadrage/zoom (pour les couvertures) ---------- */
 /* Renvoie { cropped, original } où original = image brute (pour pouvoir recadrer à nouveau plus tard sans repasser par la galerie) */
 function pickImageWithCrop(aspect = 16 / 9, maxOutW = 1200) {
