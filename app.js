@@ -208,37 +208,6 @@ function pickImage(maxW = 800) {
   });
 }
 
-function pickMultipleImages(maxW = 1600) {
-  return new Promise((resolve) => {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*';
-    inp.multiple = true;
-    inp.onchange = () => {
-      const files = Array.from(inp.files || []);
-      if (!files.length) return resolve([]);
-      const processOne = (file) => new Promise((res) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const scale = Math.min(1, maxW / img.width);
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            res(canvas.toDataURL('image/jpeg', 0.82));
-          };
-          img.src = reader.result;
-        };
-        reader.readAsDataURL(file);
-      });
-      Promise.all(files.map(processOne)).then(resolve);
-    };
-    inp.click();
-  });
-}
 /* ---------- sélection d'image AVEC recadrage/zoom (pour les couvertures) ---------- */
 /* Renvoie { cropped, original } où original = image brute (pour pouvoir recadrer à nouveau plus tard sans repasser par la galerie) */
 function pickImageWithCrop(aspect = 16 / 9, maxOutW = 1200) {
@@ -945,16 +914,10 @@ function screenRead(id) {
     <header class="top">
       <button class="icon-btn" id="bk">←</button>
       <div class="title">${esc(p.title?.trim() || 'Sans titre')}</div>
-      <button class="icon-btn" id="dup" title="Dupliquer">⧉</button>
-      <button class="btn-trash" id="del" title="Supprimer">${trashIcon()}</button>
       <button class="btn-ghost" id="ed">Modifier</button>
+      <button class="icon-btn" id="more" title="Plus d'options">⋮</button>
     </header>
     ${cover}
-    <div class="read-meta">
-      <span>📅 Créée le ${created}</span>
-      <span class="dot">•</span>
-      <span>✏️ Modifiée le ${updated}</span>
-    </div>
     <article class="read">
       <button class="chip" id="chip">${chip}</button>
       <h1 class="page-title">${esc(p.title?.trim() || 'Sans titre')}</h1>
@@ -973,9 +936,16 @@ function screenRead(id) {
   document.getElementById('bk').onclick = back;
   document.getElementById('ed').onclick = () => go('edit', id);
   document.getElementById('chip').onclick = () => go('classer', id);
-  document.getElementById('dup').onclick = () => duplicatePage(id);
-  document.getElementById('del').onclick = () => confirmDelete(id);
   document.getElementById('gal-manage').onclick = () => go('gallery', id);
+  document.getElementById('more').onclick = (e) => {
+    e.stopPropagation();
+    openMoreMenu(document.getElementById('more'), [
+      { label: `📅 Créée le ${created}`, disabled: true },
+      { label: `✏️ Modifiée le ${updated}`, disabled: true },
+      { label: '⧉ Dupliquer', action: () => duplicatePage(id) },
+      { label: trashIcon() + ' Supprimer', danger: true, action: () => confirmDelete(id) }
+    ]);
+  };
   app.querySelector('.body').querySelectorAll('a[data-wikilink]').forEach(a => {
     const pid = a.getAttribute('data-wikilink');
     const t = getPage(pid);
@@ -1009,10 +979,9 @@ function screenGallery(pageId) {
     `;
     document.getElementById('bk').onclick = back;
     document.getElementById('addimg').onclick = async () => {
-  const imgs = await pickMultipleImages(1600);
-  for (const img of imgs) { await addGalleryImage(pageId, img); }
-  if (imgs.length) render();
-};
+      const img = await pickImage(1600);
+      if (img) { await addGalleryImage(pageId, img); render(); }
+    };
     app.querySelectorAll('.gal-remove').forEach(btn => {
       btn.onclick = async () => { await removeGalleryImage(btn.dataset.id); render(); };
     });
@@ -1021,6 +990,32 @@ function screenGallery(pageId) {
     });
   };
   render();
+}
+
+/* ---------- menu déroulant générique (bouton ⋮) ---------- */
+function openMoreMenu(anchorEl, items) {
+  document.querySelectorAll('.more-menu').forEach(m => m.remove());
+  const rect = anchorEl.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'more-menu';
+  menu.style.top = (rect.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  menu.innerHTML = items.map((it, i) => `
+    <button class="more-menu-item${it.danger ? ' danger' : ''}"${it.disabled ? ' disabled' : ''} data-i="${i}">${it.label}</button>
+  `).join('');
+  document.body.appendChild(menu);
+  menu.querySelectorAll('.more-menu-item').forEach(btn => {
+    const it = items[+btn.dataset.i];
+    if (it.disabled) return;
+    btn.onclick = () => { menu.remove(); it.action?.(); };
+  });
+  const closeOnOutside = (e) => {
+    if (!menu.contains(e.target) && e.target !== anchorEl) {
+      menu.remove();
+      document.removeEventListener('click', closeOnOutside);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeOnOutside), 0);
 }
 
 function confirmDelete(id) {
