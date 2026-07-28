@@ -1009,9 +1009,10 @@ function screenGallery(pageId) {
     `;
     document.getElementById('bk').onclick = back;
     document.getElementById('addimg').onclick = async () => {
-      const img = await pickImage(1600);
-      if (img) { await addGalleryImage(pageId, img); render(); }
-    };
+  const imgs = await pickMultipleImages(1600);
+  for (const img of imgs) { await addGalleryImage(pageId, img); }
+  if (imgs.length) render();
+};
     app.querySelectorAll('.gal-remove').forEach(btn => {
       btn.onclick = async () => { await removeGalleryImage(btn.dataset.id); render(); };
     });
